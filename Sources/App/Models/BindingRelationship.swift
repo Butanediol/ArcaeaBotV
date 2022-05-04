@@ -5,6 +5,7 @@ typealias TelegramUserId = Int64
 typealias ArcaeaFriendCode = String
 
 final class BindingRelationship: Model, Content {
+
     static let schema = "binding_relationship"
 
     @ID(key: .id)
@@ -15,4 +16,12 @@ final class BindingRelationship: Model, Content {
 
     @Field(key: "arcaea_friend_code")
     var arcaeaFriendCode: ArcaeaFriendCode
+
+    init() {}
+
+    init(telegramUserId: TelegramUserId, arcaeaFriendCode: ArcaeaFriendCode) {
+        self.id = nil
+        self.telegramUserId = telegramUserId
+        self.arcaeaFriendCode = arcaeaFriendCode
+    }
 }

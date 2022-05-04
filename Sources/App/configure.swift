@@ -3,6 +3,8 @@ import FluentPostgresDriver
 import Leaf
 import Vapor
 
+import telegram_vapor_bot
+
 // configures your application
 public func configure(_ app: Application) throws {
     // uncomment to serve files from /Public folder
@@ -20,8 +22,19 @@ public func configure(_ app: Application) throws {
 
     app.views.use(.leaf)
 
-    
+    try configureTelegramBot(app)
 
     // register routes
     try routes(app)
+}
+
+fileprivate func configureTelegramBot(_ app: Application) throws {
+    TGBot.configure(
+        connection: TGLongPollingConnection(), 
+        botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY", 
+        vaporClient: app.client
+    )
+    try TGBot.shared.start()
+    TGBot.log.logLevel = .debug
+    DefaultBotHandlers.addhandlers(app: app, bot: TGBot.shared)
 }

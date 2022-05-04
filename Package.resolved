@@ -199,6 +199,24 @@
       }
     },
     {
+      "identity" : "swift-regular-expression",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nerzh/swift-regular-expression",
+      "state" : {
+        "revision" : "19c3e569a8e81da6f7f4ee3b73028c25737d3706",
+        "version" : "0.2.4"
+      }
+    },
+    {
+      "identity" : "telegram-vapor-bot",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nerzh/telegram-vapor-bot",
+      "state" : {
+        "revision" : "1a6e258b106972bf5b944af6e660e5c41b52ca1a",
+        "version" : "1.5.0"
+      }
+    },
+    {
       "identity" : "vapor",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/vapor.git",
