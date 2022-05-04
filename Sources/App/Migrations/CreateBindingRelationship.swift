@@ -6,6 +6,7 @@ struct CreateBindingRelationship: AsyncMigration {
             .id()
             .field("telegram_user_id", .int64, .required)
             .field("arcaea_friend_code", .string, .required)
+            .unique(on: "telegram_user_id")
             .create()
     }
 
