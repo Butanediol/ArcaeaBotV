@@ -125,13 +125,13 @@ extension Song {
 	func constant(of difficulty: Difficulty) -> Double {
 		switch difficulty {
 			case .past:
-				return Double(self.ratingPst / 10)
+				return Double(self.ratingPst) / 10
 			case .present:
-				return Double(self.ratingPrs / 10)
+				return Double(self.ratingPrs) / 10
 			case .future:
-				return Double(self.ratingFtr / 10)
+				return Double(self.ratingFtr) / 10
 			case .beyond:
-				return Double((self.ratingByd ?? -1) / 10)
+				return Double((self.ratingByd ?? -1)) / 10
 		}
 	}
 
