@@ -14,14 +14,14 @@ final class DefaultBotHandlers {
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/start"]) { update, bot in
+        let handler = TGCommandHandler(commands: ["/start"], botUsername: app.tgConfig?.botUsername) { update, bot in
             try update.message?.reply(text: "Hello telegram user.", bot: bot)
         }
         bot.connection.dispatcher.add(handler)
     }
 
     private static func bindHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/bind"]) { update, bot in
+        let handler = TGCommandHandler(commands: ["/bind"], botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -64,7 +64,7 @@ final class DefaultBotHandlers {
     }
 
     private static func unbindHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/unbind"]) { update, bot in
+        let handler = TGCommandHandler(commands: ["/unbind"], botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -96,7 +96,7 @@ final class DefaultBotHandlers {
     }
 
     private static func recentHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/recent"]) { update, bot in
+        let handler = TGCommandHandler(commands: ["/recent"], botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -126,7 +126,7 @@ final class DefaultBotHandlers {
 
 
     private static func myHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/my"]) { update, bot in
+        let handler = TGCommandHandler(commands: ["/my"], botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -206,7 +206,7 @@ final class DefaultBotHandlers {
     }
 
     private static func best30Handler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/best30"]) { update, bot in
+        let handler = TGCommandHandler(commands: ["/best30"], botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }

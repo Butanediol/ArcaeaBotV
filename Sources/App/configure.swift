@@ -42,7 +42,8 @@ fileprivate func configureTelegramBot(_ app: Application) throws {
         botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY", 
         vaporClient: app.client
     )
+    app.tgConfig = .init(botUsername: Environment.get("TELEGRAM_BOT_USERNAME"))
     try TGBot.shared.start()
-    TGBot.log.logLevel = .debug
+    TGBot.log.logLevel = .info
     DefaultBotHandlers.addhandlers(app: app, bot: TGBot.shared)
 }
