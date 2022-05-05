@@ -25,6 +25,9 @@ final class Song: Model, Content {
 	@Field(key: "packset")
 	var packset: String
 
+	@Field(key: "artist")
+	var artist: String
+
 	@Field(key: "time")
 	var time: Int
 

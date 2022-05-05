@@ -11,6 +11,7 @@ struct CreateSongs: AsyncMigration {
             .field("bpm", .string, .required)
             .field("bpm_base", .int, .required)
             .field("packset", .string, .required)
+            .field("artist", .string, .required)
             .field("time", .int, .required)
             .field("side", .int, .required)
             .field("date", .double, .required)
