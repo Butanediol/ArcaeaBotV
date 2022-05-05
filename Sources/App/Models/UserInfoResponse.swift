@@ -1,6 +1,11 @@
 import Fluent
 import Vapor
 
+protocol UserInfoProtocol {
+    var potential: Int? { get }
+    var displayName: String { get }
+}
+
 // MARK: - UserInfoResponse
 struct UserInfoResponse: Codable {
     let userInfo: UserInfo
@@ -11,7 +16,7 @@ struct UserInfoResponse: Codable {
 }
 
 // MARK: - UserInfo
-struct UserInfo: Codable {
+struct UserInfo: Codable, UserInfoProtocol {
     let displayName: String
     let potential: Int?
     let partner: Partner
@@ -28,35 +33,14 @@ extension UserInfo {
     func toStored(friendCode: ArcaeaFriendCode) -> StoredUserInfo {
         .init(friendCode: friendCode, displayName: self.displayName, potential: self.potential)
     }
-}
-
-extension UserInfo {
-    var relativeTime: String {
-        let playDate = Date(timeIntervalSince1970: Double(self.lastPlayedSong.timePlayed / 1000))
-
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "en_US")
-        return formatter.localizedString(for: playDate, relativeTo: Date())
-    }
 
     func formatted(app: Application) throws -> String {
-        let song = try Song.query(on: app.db).filter(\.$sid, .equal, lastPlayedSong.songID).first().wait()
-
-        let userPtt = potential != nil ? String(Double(potential!) / 100) : "Hidden"
-        let playPtt = song?.playPtt(difficulty: lastPlayedSong.difficulty, score: lastPlayedSong.score) ?? -1
-
-        return """
-        \(self.displayName)(\(userPtt)) played `\(song?.nameEn ?? lastPlayedSong.songID)` \(relativeTime)
-        Difficulty: \(lastPlayedSong.difficulty.fullName) (\((song?.constant(of: lastPlayedSong.difficulty) ?? -1).formatString(withDigits: 1)))
-        Score: \(lastPlayedSong.score)
-        PlayPTT: \(playPtt.formatString(withDigits: 2))
-        \(lastPlayedSong.pureCount) (+\(lastPlayedSong.shinyPureCount)) / \(lastPlayedSong.farCount) / \(lastPlayedSong.lostCount)
-        """
+        return try self.lastPlayedSong.formatted(app: app, userInfo: self)
     }
 }
 
 // MARK: - StoredUserInfo
-final class StoredUserInfo: Model, Content {
+final class StoredUserInfo: Model, Content, UserInfoProtocol {
     static let schema = "stored_user_info"
 
     @ID(key: .id)

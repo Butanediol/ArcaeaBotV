@@ -26,6 +26,7 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateBindingRelationship())
     app.migrations.add(CreateStoredUserInfo())
     app.migrations.add(CreateSongs())
+    app.migrations.add(CreateAliases())
 
     app.views.use(.leaf)
 

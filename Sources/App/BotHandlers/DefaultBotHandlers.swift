@@ -1,4 +1,5 @@
 import Vapor
+import Fluent
 import telegram_vapor_bot
 
 final class DefaultBotHandlers {
@@ -8,6 +9,7 @@ final class DefaultBotHandlers {
         bindHandler(app: app, bot: bot)
         unbindHandler(app: app, bot: bot)
         recentHandler(app: app, bot: bot)
+        myHandler(app: app, bot: bot)
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -45,12 +47,11 @@ final class DefaultBotHandlers {
 
                 let userInfo = try app.arcaeaLimitedAPI.userInfo(friendCode: arcaeaFriendCode)
 
-                try update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
-
                 try userInfo.toStored(friendCode: arcaeaFriendCode).save(on: app.db).wait()
                 try BindingRelationship(telegramUserId: telegramUserId, arcaeaFriendCode: arcaeaFriendCode)
                     .save(on: app.db)
                     .wait()
+                try update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
             }
                 
         }
@@ -113,4 +114,85 @@ final class DefaultBotHandlers {
         bot.connection.dispatcher.add(handler)
     }
 
+
+    private static func myHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/my"]) { update, bot in
+
+            // Ensure valid telegram user
+            guard let telegramUserId = update.message?.from?.id else { return }
+
+            // TODO: - Refine search logic
+            guard let parameters = update.message?.parameters else { app.logger.info("parameters error"); return }
+            guard let searchText = parameters.first else { 
+                try update.message?.reply(text: "Invalid song name.", bot: bot)
+                return 
+            }
+
+            var difficulty: Difficulty = .future
+            switch parameters.last {
+                case "pst", "past":
+                    difficulty = .past
+                case "prs", "present":
+                    difficulty = .present
+                case "ftr", "future", "0":
+                    difficulty = .future
+                case "byd", "byn", "beyond":
+                    difficulty = .beyond
+                default:
+                    break
+            }
+
+            // Ensure bound
+            guard let relationship = try BindingRelationship
+                .query(on: app.db)
+                .filter(\.$telegramUserId, .equal, telegramUserId)
+                .first()
+                .wait() else {
+                    try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                    return
+                }
+
+            guard let userInfo = try StoredUserInfo
+                .query(on: app.db)
+                .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
+                .first()
+                .wait() else {
+                    throw Abort(.internalServerError)
+                }
+
+
+            if let alias = try Alias.query(on: app.db).filter(\.$alias, .equal, searchText).first().wait(),
+                let song = try Song.query(on: app.db).filter(\.$sid, .equal, alias.sid).first().wait() {
+                    // Search in aliases
+                app.logger.info("Found song \(song.nameEn) in aliases.")
+                let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
+                switch result {
+                    case .success(let play):
+                        try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                    case .failure(let error):
+                        try update.message?.reply(text: "\(error.localizedDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                }
+            } else if let song = try Song.query(on: app.db).group(.or, { group in
+                group.filter(\.$sid ~~ searchText)
+                group.filter(\.$nameEn ~~ searchText)
+                group.filter(\.$nameJp ~~ searchText)
+            })
+            // .sort(.sql(raw: "similarity(sid, '\(searchText)') DESC"))
+            .first().wait() {
+                // Search by sid, nameEn, nameJp
+                app.logger.info("Found song \(song.nameEn) by sid, nameEn, nameJP.")
+                let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
+                switch result {
+                    case .success(let play):
+                        try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                    case .failure(let error):
+                        try update.message?.reply(text: "\(error.localizedDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                }
+            } else {
+                app.logger.info("Song not found.")
+                try update.message?.reply(text: "Song \(searchText) not found.".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            }
+        }
+        bot.connection.dispatcher.add(handler)
+    }
 }
