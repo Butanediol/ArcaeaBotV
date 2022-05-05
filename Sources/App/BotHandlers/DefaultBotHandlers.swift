@@ -173,36 +173,23 @@ final class DefaultBotHandlers {
                     throw Abort(.internalServerError)
                 }
 
-
-            if let alias = try Alias.query(on: app.db).filter(\.$alias, .equal, searchText).first().wait(),
-                let song = try Song.query(on: app.db).filter(\.$sid, .equal, alias.sid).first().wait() {
-                    // Search in aliases
-                app.logger.info("Found song \(song.nameEn) in aliases.")
-                let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
-                switch result {
-                    case .success(let play):
-                        try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
-                    case .failure(let error):
-                        try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
-                }
-            } else if let song = try Song.query(on: app.db).group(.or, { group in
+            let alias = try Alias.query(on: app.db).filter(\.$alias, .equal, searchText).first().wait()
+            guard let song = try Song.query(on: app.db).group(.or, { group in
+                if let alias = alias { group.filter(\.$sid == alias.sid) }
                 group.filter(\.$sid ~~ searchText)
                 group.filter(\.$nameEn ~~ searchText)
                 group.filter(\.$nameJp ~~ searchText)
-            })
-            .first().wait() {
-                // Search by sid, nameEn, nameJp
-                app.logger.info("Found song \(song.nameEn) by sid, nameEn, nameJP.")
-                let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
-                switch result {
-                    case .success(let play):
-                        try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
-                    case .failure(let error):
-                        try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
-                }
-            } else {
-                app.logger.info("Song not found.")
-                try update.message?.reply(text: "Song \(searchText) not found.".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            }).first().wait() else {
+                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                return
+            }
+
+            let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
+            switch result {
+                case .success(let play):
+                    try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                case .failure(let error):
+                    try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
             }
         }
         bot.connection.dispatcher.add(handler)
@@ -334,7 +321,10 @@ final class DefaultBotHandlers {
                     break
             }
 
+            let alias = try Alias.query(on: app.db).filter(\.$alias == searchText).first().wait()
+
             guard let song = try Song.query(on: app.db).group(.or, { group in
+                if let alias = alias { group.filter(\.$sid == alias.sid) }
                 group.filter(\.$sid ~~ searchText)
                 group.filter(\.$nameEn ~~ searchText)
                 group.filter(\.$nameJp ~~ searchText)
@@ -344,7 +334,7 @@ final class DefaultBotHandlers {
             }
 
             var text = """
-            \(song.nameEn) \(song.constant(of: difficulty))\n
+            \(song.nameEn) \(difficulty.abbr.capitalized) \(song.constant(of: difficulty))\n
             """ 
 
             text += score != nil ? 
