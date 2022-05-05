@@ -18,7 +18,14 @@ public func configure(_ app: Application) throws {
         database: Environment.get("DATABASE_NAME") ?? "vapor_database"
     ), as: .psql)
 
+    app.arcaeaLimitedAPIConfiguration = ArcaeaLimitedAPIConfiguration(
+        token: Environment.get("ARCAEA_LIMITED_API_TOKEN") ?? "", 
+        baseUrl: ArcaeaLimitedAPIConfiguration.defaultUrl
+    )
+
     app.migrations.add(CreateBindingRelationship())
+    app.migrations.add(CreateStoredUserInfo())
+    app.migrations.add(CreateSongs())
 
     app.views.use(.leaf)
 
