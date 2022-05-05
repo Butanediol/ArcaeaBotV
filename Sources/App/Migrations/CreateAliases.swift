@@ -6,6 +6,7 @@ struct CreateAliases: AsyncMigration {
             .id()
             .field("sid", .string, .required)
             .field("alias", .string, .required)
+            .unique(on: "alias")
             .create()
     }
 

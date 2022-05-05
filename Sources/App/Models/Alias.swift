@@ -12,4 +12,11 @@ final class Alias: Content, Model {
 
 	@Field(key: "alias")
 	var alias: String
+
+	init() {}
+
+	init(sid: String, alias: String) {
+		self.sid = sid
+		self.alias = alias
+	}
 }

@@ -2,6 +2,7 @@ import Vapor
 
 struct TGConfig {
 	var botUsername: String?
+	var adminUserId: String?
 }
 
 struct TGConfigKey: StorageKey {

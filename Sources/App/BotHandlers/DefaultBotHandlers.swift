@@ -11,6 +11,8 @@ final class DefaultBotHandlers {
         recentHandler(app: app, bot: bot)
         myHandler(app: app, bot: bot)
         best30Handler(app: app, bot: bot)
+        getAliasHandler(app: app, bot: bot)
+        addAliasHandler(app: app, bot: bot)
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -232,6 +234,78 @@ final class DefaultBotHandlers {
                     try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
                 case .failure(let error):
                     try update.message?.reply(text: "\(error.errorDescription)", bot: bot)
+            }
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func getAliasHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/getalias"], options: [.editedUpdates], botUsername: app.tgConfig?.botUsername) { update, bot in
+            guard update.message?.parameters.count ?? 0 > 0, let searchText = update.message?.parameters.joined(separator: " ") else {
+                try update.message?.reply(text: "Please specify a song id.", bot: bot)
+                return
+            }
+
+            guard let song = try Song.query(on: app.db).group(.or, { group in
+                group.filter(\.$sid ~~ searchText)
+                group.filter(\.$nameEn ~~ searchText)
+                group.filter(\.$nameJp ~~ searchText)
+            }).first().wait() else {
+                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                return
+            }
+
+            let aliases = try Alias.query(on: app.db)
+                .filter(\.$sid, .equal, song.sid)
+                .all()
+                .wait()
+                .map { $0.alias }
+                .joined(separator: "\n")
+
+            try update.message?.reply(text: ("\(song.nameEn)\n`\(song.sid)`\n---\n" + aliases).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func addAliasHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/addalias"], botUsername: app.tgConfig?.botUsername) { update, bot in
+
+            // Ensure valid telegram user
+            guard let telegramUserId = update.message?.from?.id else { return }
+
+            // Ensure this user has operator permission
+            guard try BindingRelationship.query(on: app.db)
+                .filter(\.$telegramUserId, .equal, telegramUserId)
+                .first()
+                .wait()?
+                .isOperator == true || String(telegramUserId) == app.tgConfig?.adminUserId else {
+                    try update.message?.reply(text: "Sorry, permission denied.", bot: bot)
+                    return
+                }
+
+            // Parse song id
+            guard let searchText = update.message?.parameters.first else {
+                try update.message?.reply(text: "Please specify a song id.", bot: bot)
+                return
+            }
+
+            // Parse new alias
+            guard let alias = update.message?.parameters.dropFirst().first else {
+                try update.message?.reply(text: "Please specify a new alias.", bot: bot)
+                return
+            }
+
+            // Check if song exist
+            guard let song = try Song.query(on: app.db).filter(\.$sid == searchText).first().wait() else {
+                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                return
+            }
+
+            do {
+                try Alias(sid: song.sid, alias: alias).save(on: app.db).wait()
+                try update.message?.reply(text: "New alias saved.\n\(alias) -> \(song.sid)", bot: bot)
+            } catch {
+                try update.message?.reply(text: "\(error.localizedDescription)", bot: bot)
             }
         }
         bot.connection.dispatcher.add(handler)
