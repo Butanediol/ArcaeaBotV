@@ -13,6 +13,7 @@ final class DefaultBotHandlers {
         best30Handler(app: app, bot: bot)
         getAliasHandler(app: app, bot: bot)
         addAliasHandler(app: app, bot: bot)
+        calHandler(app: app, bot: bot)
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -307,6 +308,55 @@ final class DefaultBotHandlers {
             } catch {
                 try update.message?.reply(text: "\(error.localizedDescription)", bot: bot)
             }
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func calHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/cal"], botUsername: app.tgConfig?.botUsername) { update, bot in
+            guard let searchText = update.message?.parameters.first else {
+                try update.message?.reply(text: "You have to specify a song id or an alias.", bot: bot)
+                return
+            }
+
+            let score = Int(update.message?.parameters.dropFirst().first ?? "")
+            var difficulty: Difficulty = .future
+            switch update.message?.parameters.dropFirst(2).first {
+                case "pst", "past":
+                    difficulty = .past
+                case "prs", "present":
+                    difficulty = .present
+                case "ftr", "future":
+                    difficulty = .future
+                case "byn", "byd", "beyond":
+                    difficulty = .beyond
+                default:
+                    break
+            }
+
+            guard let song = try Song.query(on: app.db).group(.or, { group in
+                group.filter(\.$sid ~~ searchText)
+                group.filter(\.$nameEn ~~ searchText)
+                group.filter(\.$nameJp ~~ searchText)
+            }).first().wait() else {
+                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                return
+            }
+
+            var text = """
+            \(song.nameEn) \(song.constant(of: difficulty))\n
+            """ 
+
+            text += score != nil ? 
+                "\(score!) -> \(String(format: "%.3f", song.playPtt(difficulty: difficulty, score: score!)))\n------\n" : "" 
+
+            text +=
+                [10_000_000, 9_900_000, 9_800_000, 9_500_000, 9_200_000, 8_900_000, 8_600_000]
+                .map { levelScore in
+                    "\(levelScore) -> \(song.playPtt(difficulty: difficulty, score: levelScore))"
+                }.joined(separator: "\n")
+
+            try update.message?.reply(text: text, bot: bot)
         }
         bot.connection.dispatcher.add(handler)
     }
