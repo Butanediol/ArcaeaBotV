@@ -27,13 +27,13 @@ final class DefaultBotHandlers {
             guard let telegramUserId = update.message?.from?.id else { return }
 
             // Check if already bound.
-            if let relationship = try BindingRelationship
-                .query(on: app.db)
+            if let relationship = try BindingRelationship.query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
                 .wait() {
                 // Already bound
-                try update.message?.reply(text: "You have already bound, \(relationship.arcaeaFriendCode)", bot: bot)
+                let userInfo = try StoredUserInfo.query(on: app.db).filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode).first().wait()
+                try update.message?.reply(text: "You have already bound, \(userInfo?.displayName ?? relationship.arcaeaFriendCode)", bot: bot)
             } else {
                 // New user
 
@@ -126,7 +126,7 @@ final class DefaultBotHandlers {
 
 
     private static func myHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/my"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/my"], options: [.editedUpdates], botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
