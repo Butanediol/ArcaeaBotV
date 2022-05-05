@@ -10,6 +10,7 @@ final class DefaultBotHandlers {
         unbindHandler(app: app, bot: bot)
         recentHandler(app: app, bot: bot)
         myHandler(app: app, bot: bot)
+        best30Handler(app: app, bot: bot)
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -45,15 +46,19 @@ final class DefaultBotHandlers {
                     return
                 }
 
-                let userInfo = try app.arcaeaLimitedAPI.userInfo(friendCode: arcaeaFriendCode)
+                let result = app.arcaeaLimitedAPI.userInfo(friendCode: arcaeaFriendCode)
+                switch result {
+                    case .success(let userInfo):
+                        try userInfo.toStored(friendCode: arcaeaFriendCode).save(on: app.db).wait()
+                        try BindingRelationship(telegramUserId: telegramUserId, arcaeaFriendCode: arcaeaFriendCode)
+                            .save(on: app.db)
+                            .wait()
+                        try update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
 
-                try userInfo.toStored(friendCode: arcaeaFriendCode).save(on: app.db).wait()
-                try BindingRelationship(telegramUserId: telegramUserId, arcaeaFriendCode: arcaeaFriendCode)
-                    .save(on: app.db)
-                    .wait()
-                try update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
-            }
-                
+                    case .failure(let error):
+                        try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                }
+            }                
         }
         bot.connection.dispatcher.add(handler)
     }
@@ -106,10 +111,15 @@ final class DefaultBotHandlers {
                     return
                 }
 
-            let userInfo = try app.arcaeaLimitedAPI.userInfo(friendCode: relationship.arcaeaFriendCode)
+            let result = app.arcaeaLimitedAPI.userInfo(friendCode: relationship.arcaeaFriendCode)
+            switch result {
+                case .success(let userInfo):
+                    try update.message?.reply(text: userInfo.formatted(app: app).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                    try userInfo.toStored(friendCode: relationship.arcaeaFriendCode).save(on: app.db).wait()
 
-            try update.message?.reply(text: userInfo.formatted(app: app).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
-            try userInfo.toStored(friendCode: relationship.arcaeaFriendCode).save(on: app.db).wait()
+                case .failure(let error):
+                    try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            }
         }
         bot.connection.dispatcher.add(handler)
     }
@@ -170,14 +180,13 @@ final class DefaultBotHandlers {
                     case .success(let play):
                         try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
                     case .failure(let error):
-                        try update.message?.reply(text: "\(error.localizedDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                        try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
                 }
             } else if let song = try Song.query(on: app.db).group(.or, { group in
                 group.filter(\.$sid ~~ searchText)
                 group.filter(\.$nameEn ~~ searchText)
                 group.filter(\.$nameJp ~~ searchText)
             })
-            // .sort(.sql(raw: "similarity(sid, '\(searchText)') DESC"))
             .first().wait() {
                 // Search by sid, nameEn, nameJp
                 app.logger.info("Found song \(song.nameEn) by sid, nameEn, nameJP.")
@@ -186,11 +195,43 @@ final class DefaultBotHandlers {
                     case .success(let play):
                         try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
                     case .failure(let error):
-                        try update.message?.reply(text: "\(error.localizedDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                        try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
                 }
             } else {
                 app.logger.info("Song not found.")
                 try update.message?.reply(text: "Song \(searchText) not found.".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            }
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func best30Handler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/best30"]) { update, bot in
+
+            // Ensure valid telegram user
+            guard let telegramUserId = update.message?.from?.id else { return }
+
+            // Ensure bound
+            guard let relationship = try BindingRelationship
+                .query(on: app.db)
+                .filter(\.$telegramUserId, .equal, telegramUserId)
+                .first()
+                .wait() else {
+                    try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                    return
+                }
+
+            let userInfo = try StoredUserInfo.query(on: app.db)
+                .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
+                .first()
+                .wait()
+
+            let result = app.arcaeaLimitedAPI.bestInfo(friendCode: relationship.arcaeaFriendCode)
+            switch result {
+                case .success(let best30):
+                    try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
+                case .failure(let error):
+                    try update.message?.reply(text: "\(error.errorDescription)", bot: bot)
             }
         }
         bot.connection.dispatcher.add(handler)

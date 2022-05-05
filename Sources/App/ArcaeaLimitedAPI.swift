@@ -55,15 +55,32 @@ extension Application {
 			return try request(endpoint: endpoint, httpMethod: "GET")
 		}
 
-		func userInfo(friendCode: ArcaeaFriendCode) throws -> UserInfo {
-			let rawResponse = try get(endpoint: .userInfo(friendCode))
-			return try rawResponse.content.decode(UserInfoResponse.self).userInfo
+		func userInfo(friendCode: ArcaeaFriendCode) -> Result<UserInfo, APIError> {
+			guard let rawResponse = try? get(endpoint: .userInfo(friendCode)) else { return .failure(APIError.networkError) }
+			if let userInfo = try? rawResponse.content.decode(UserInfoResponse.self).userInfo {
+				return .success(userInfo)
+			}
+			if let apiError = try? rawResponse.content.decode(APIError.self) {
+				return .failure(apiError)
+			}
+			return .failure(APIError.unknownError)
 		}
 
-		func scoreInfo(friendCode: ArcaeaFriendCode, difficulty: Difficulty, songId: String) -> Result<Play, Error> {
+		func scoreInfo(friendCode: ArcaeaFriendCode, difficulty: Difficulty, songId: String) -> Result<Play, APIError> {
 			guard let rawResponse = try? get(endpoint: .score(difficulty, friendCode, songId)) else { return .failure(APIError.networkError) }
 			if let bestPlay = try? rawResponse.content.decode(ScoreResponse.self).bestPlay {
 				return .success(bestPlay)
+			}
+			if let apiError = try? rawResponse.content.decode(APIError.self) {
+				return .failure(apiError)
+			}
+			return .failure(APIError.unknownError)
+		}
+
+		func bestInfo(friendCode: ArcaeaFriendCode) -> Result<Best30, APIError> {
+			guard let rawResponse = try? get(endpoint: .best(friendCode)) else { return .failure(APIError.networkError) }
+			if let best30 = try? rawResponse.content.decode(Best30Response.self).best30 {
+				return .success(best30)
 			}
 			if let apiError = try? rawResponse.content.decode(APIError.self) {
 				return .failure(apiError)
