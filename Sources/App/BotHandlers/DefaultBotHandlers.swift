@@ -389,6 +389,7 @@ final class DefaultBotHandlers {
                                         )
                                     )
                                 )
+                                try userInfo.toStored(friendCode: relationship.arcaeaFriendCode).save(on: app.db).wait()
                             case .failure(let error):
                                 queryError = error
                         }
