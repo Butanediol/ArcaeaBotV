@@ -58,6 +58,7 @@ extension Application {
 		func userInfo(friendCode: ArcaeaFriendCode) -> Result<UserInfo, APIError> {
 			guard let rawResponse = try? get(endpoint: .userInfo(friendCode)) else { return .failure(APIError.networkError) }
 			if let userInfo = try? rawResponse.content.decode(UserInfoResponse.self).userInfo {
+				try? userInfo.toStored(friendCode: friendCode).save(on: app.db).wait()
 				return .success(userInfo)
 			}
 			if let apiError = try? rawResponse.content.decode(APIError.self) {

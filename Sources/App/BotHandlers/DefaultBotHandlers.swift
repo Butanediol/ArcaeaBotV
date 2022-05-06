@@ -53,7 +53,6 @@ final class DefaultBotHandlers {
                 let result = app.arcaeaLimitedAPI.userInfo(friendCode: arcaeaFriendCode)
                 switch result {
                     case .success(let userInfo):
-                        try userInfo.toStored(friendCode: arcaeaFriendCode).save(on: app.db).wait()
                         try BindingRelationship(telegramUserId: telegramUserId, arcaeaFriendCode: arcaeaFriendCode)
                             .save(on: app.db)
                             .wait()
@@ -119,7 +118,6 @@ final class DefaultBotHandlers {
             switch result {
                 case .success(let userInfo):
                     try update.message?.reply(text: userInfo.formatted(app: app).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
-                    try userInfo.toStored(friendCode: relationship.arcaeaFriendCode).save(on: app.db).wait()
 
                 case .failure(let error):
                     try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
@@ -142,19 +140,7 @@ final class DefaultBotHandlers {
                 return 
             }
 
-            var difficulty: Difficulty = .future
-            switch parameters.last {
-                case "pst", "past":
-                    difficulty = .past
-                case "prs", "present":
-                    difficulty = .present
-                case "ftr", "future", "0":
-                    difficulty = .future
-                case "byd", "byn", "beyond":
-                    difficulty = .beyond
-                default:
-                    break
-            }
+            let difficulty: Difficulty = parameters.last?.toDifficulty() ?? .future
 
             // Ensure bound
             guard let relationship = try BindingRelationship
@@ -174,13 +160,7 @@ final class DefaultBotHandlers {
                     throw Abort(.internalServerError)
                 }
 
-            let alias = try Alias.query(on: app.db).filter(\.$alias, .equal, searchText).first().wait()
-            guard let song = try Song.query(on: app.db).group(.or, { group in
-                if let alias = alias { group.filter(\.$sid == alias.sid) }
-                group.filter(\.$sid ~~ searchText)
-                group.filter(\.$nameEn ~~ searchText)
-                group.filter(\.$nameJp ~~ searchText)
-            }).first().wait() else {
+            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first else {
                 try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
@@ -235,13 +215,7 @@ final class DefaultBotHandlers {
                 return
             }
 
-            let alias = try Alias.query(on: app.db).filter(\.$alias == searchText).first().wait()
-            guard let song = try Song.query(on: app.db).group(.or, { group in
-                if let alias = alias { group.filter(\.$sid == alias.sid) }
-                group.filter(\.$sid ~~ searchText)
-                group.filter(\.$nameEn ~~ searchText)
-                group.filter(\.$nameJp ~~ searchText)
-            }).first().wait() else {
+            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first else {
                 try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
@@ -310,28 +284,9 @@ final class DefaultBotHandlers {
             }
 
             let score = Int(update.message?.parameters.dropFirst().first ?? "")
-            var difficulty: Difficulty = .future
-            switch update.message?.parameters.dropFirst(2).first {
-                case "pst", "past":
-                    difficulty = .past
-                case "prs", "present":
-                    difficulty = .present
-                case "ftr", "future":
-                    difficulty = .future
-                case "byn", "byd", "beyond":
-                    difficulty = .beyond
-                default:
-                    break
-            }
+            let difficulty: Difficulty = update.message?.parameters.dropFirst(2).first?.toDifficulty() ?? .future
 
-            let alias = try Alias.query(on: app.db).filter(\.$alias == searchText).first().wait()
-
-            guard let song = try Song.query(on: app.db).group(.or, { group in
-                if let alias = alias { group.filter(\.$sid == alias.sid) }
-                group.filter(\.$sid ~~ searchText)
-                group.filter(\.$nameEn ~~ searchText)
-                group.filter(\.$nameJp ~~ searchText)
-            }).first().wait() else {
+            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first else {
                 try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
@@ -391,35 +346,15 @@ final class DefaultBotHandlers {
                                         )
                                     )
                                 )
-                                try userInfo.toStored(friendCode: relationship.arcaeaFriendCode).save(on: app.db).wait()
                             case .failure(let error):
                                 queryError = error
                         }
                     } else {
                         // Query is not empty -> /my
                         guard let query = queries.first else { return }
-                        let alias = try Alias.query(on: app.db).filter(\.$alias == String(query)).first().wait()
+                        if let song = try Song.search(query, in: app, options: .includeAliases, .exactMatch).wait().first {
 
-                        if let song = try Song.query(on: app.db).group(.or, { group in
-                            if let alias = alias { group.filter(\.$sid == alias.sid) }
-                            group.filter(\.$sid == String(query))
-                            group.filter(\.$nameEn == String(query))
-                            group.filter(\.$nameJp == String(query))
-                        }).first().wait() {
-
-                            var difficulty = Difficulty.future
-                            switch queries.dropFirst().first {
-                                case "pst", "past":
-                                    difficulty = .past
-                                case "prs", "present":
-                                    difficulty = .present
-                                case "ftr", "future":
-                                    difficulty = .future
-                                case "byd", "byn", "beyond":
-                                    difficulty = .beyond
-                                default:
-                                    break
-                            }
+                            let difficulty: Difficulty = queries.dropFirst().first?.toDifficulty() ?? .future
 
                             let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
                             switch result {
