@@ -27,6 +27,7 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateStoredUserInfo())
     app.migrations.add(CreateSongs())
     app.migrations.add(CreateAliases())
+    app.migrations.add(CreateStoredBest30())
 
     app.views.use(.leaf)
 
@@ -44,7 +45,8 @@ private func configureTelegramBot(_ app: Application) throws {
     )
     app.tgConfig = .init(
         botUsername: Environment.get("TELEGRAM_BOT_USERNAME"),
-        adminUserId: Environment.get("TELEGRAM_ADMIN_USERID")
+        adminUserId: Environment.get("TELEGRAM_ADMIN_USERID"),
+        webAppBaseUrl: Environment.get("WEB_APP_BASE_URL")
     )
     try TGBot.shared.start()
     TGBot.log.logLevel = .info

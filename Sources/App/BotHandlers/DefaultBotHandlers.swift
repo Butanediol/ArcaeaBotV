@@ -19,7 +19,21 @@ final class DefaultBotHandlers {
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
         let handler = TGCommandHandler(commands: ["/start"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
-            try update.message?.reply(text: "Hello telegram user.", bot: bot)
+
+            var markup: TGReplyMarkup? {
+                if let webbAppBaseUrl = app.tgConfig?.webAppBaseUrl {
+                    return .inlineKeyboardMarkup(.init(inlineKeyboard: [[.init(
+                        text: "Web Application",
+                        webApp: .init(url: webbAppBaseUrl)
+                    )]]))
+                } else { return nil }
+            }
+
+            try update.message?.reply(
+                text: "Hello telegram user.",
+                bot: bot,
+                replyMarkup: markup
+            )
         }
         bot.connection.dispatcher.add(handler)
     }
