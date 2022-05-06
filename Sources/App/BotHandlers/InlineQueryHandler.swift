@@ -1,8 +1,7 @@
-import telegram_vapor_bot
 import Foundation
+import telegram_vapor_bot
 
 class TGInlineQueryHandler: TGHandlerPrtcl {
-
     public var id: Int = 0
 
     public var name: String
@@ -10,11 +9,11 @@ class TGInlineQueryHandler: TGHandlerPrtcl {
     let callback: TGHandlerCallback
 
     public init(
-    	name: String = String(describing: TGInlineQueryHandler.self),
-    	_ callback: @escaping TGHandlerCallback
+        name: String = String(describing: TGInlineQueryHandler.self),
+        _ callback: @escaping TGHandlerCallback
     ) {
-    	self.name = name
-    	self.callback = callback
+        self.name = name
+        self.callback = callback
     }
 
     func check(update: TGUpdate) -> Bool {
@@ -23,9 +22,9 @@ class TGInlineQueryHandler: TGHandlerPrtcl {
 
     func handle(update: TGUpdate, bot: TGBotPrtcl) {
         do {
-        	try callback(update, bot)
+            try callback(update, bot)
         } catch {
-        	TGBot.log.error(error.logMessage)
+            TGBot.log.error(error.logMessage)
         }
     }
 }

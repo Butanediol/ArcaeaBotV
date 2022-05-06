@@ -7,4 +7,4 @@ DerivedData/
 db.sqlite
 .swiftpm
 .env
-.vscode/launch.json
+.vscode

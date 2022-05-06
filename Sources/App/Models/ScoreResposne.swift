@@ -1,7 +1,7 @@
 import Foundation
 
 struct ScoreResponse: Codable {
-	let bestPlay: Play
+    let bestPlay: Play
 
     enum CodingKeys: String, CodingKey {
         case bestPlay = "data"

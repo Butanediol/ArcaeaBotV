@@ -7,6 +7,7 @@ protocol UserInfoProtocol {
 }
 
 // MARK: - UserInfoResponse
+
 struct UserInfoResponse: Codable {
     let userInfo: UserInfo
 
@@ -16,6 +17,7 @@ struct UserInfoResponse: Codable {
 }
 
 // MARK: - UserInfo
+
 struct UserInfo: Codable, UserInfoProtocol {
     let displayName: String
     let potential: Int?
@@ -31,15 +33,16 @@ struct UserInfo: Codable, UserInfoProtocol {
 
 extension UserInfo {
     func toStored(friendCode: ArcaeaFriendCode) -> StoredUserInfo {
-        .init(friendCode: friendCode, displayName: self.displayName, potential: self.potential)
+        .init(friendCode: friendCode, displayName: displayName, potential: potential)
     }
 
     func formatted(app: Application) throws -> String {
-        return try self.lastPlayedSong.formatted(app: app, userInfo: self)
+        return try lastPlayedSong.formatted(app: app, userInfo: self)
     }
 }
 
 // MARK: - StoredUserInfo
+
 final class StoredUserInfo: Model, Content, UserInfoProtocol {
     static let schema = "stored_user_info"
 
@@ -61,13 +64,14 @@ final class StoredUserInfo: Model, Content, UserInfoProtocol {
     init() {}
 
     init(friendCode: ArcaeaFriendCode, displayName: String, potential: Int?) {
-        self.arcaeaFriendCode = friendCode
+        arcaeaFriendCode = friendCode
         self.displayName = displayName
         self.potential = potential
     }
 }
 
 // MARK: - Partner
+
 struct Partner: Codable {
     let partnerID: Int
     let isAwakened: Bool

@@ -1,9 +1,8 @@
-import Vapor
 import Fluent
 import telegram_vapor_bot
+import Vapor
 
 final class DefaultBotHandlers {
-
     static func addhandlers(app: Vapor.Application, bot: TGBotPrtcl) {
         startHandler(app: app, bot: bot)
         bindHandler(app: app, bot: bot)
@@ -18,32 +17,40 @@ final class DefaultBotHandlers {
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/start"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/start"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
             try update.message?.reply(text: "Hello telegram user.", bot: bot)
         }
         bot.connection.dispatcher.add(handler)
     }
 
     private static func bindHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/bind"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/bind"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
-            guard let telegramUserId = update.message?.from?.id, telegramUserId != 136817688 else { return }
+            guard let telegramUserId = update.message?.from?.id, telegramUserId != 136_817_688 else { return }
 
             // Check if already bound.
             if let relationship = try BindingRelationship.query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait() {
+                .wait()
+            {
                 // Already bound
-                let userInfo = try StoredUserInfo.query(on: app.db).filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode).first().wait()
-                try update.message?.reply(text: "You have already bound, \(userInfo?.displayName ?? relationship.arcaeaFriendCode)", bot: bot)
+                let userInfo = try StoredUserInfo.query(on: app.db)
+                    .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode).first().wait()
+                try update.message?.reply(
+                    text: "You have already bound, \(userInfo?.displayName ?? relationship.arcaeaFriendCode)",
+                    bot: bot
+                )
             } else {
                 // New user
 
                 // Ensure friend code is valid
-                guard 
-                    let arcaeaFriendCode = update.message?.parameters.joined(separator: " ") as? ArcaeaFriendCode,
+                guard
+                    let arcaeaFriendCode = update.message?.parameters
+                    .joined(separator: " ") as? ArcaeaFriendCode,
                     arcaeaFriendCode.isValid
                 else {
                     try update.message?.reply(text: "Invalid arcaea friend code.", bot: bot)
@@ -52,22 +59,30 @@ final class DefaultBotHandlers {
 
                 let result = app.arcaeaLimitedAPI.userInfo(friendCode: arcaeaFriendCode)
                 switch result {
-                    case .success(let userInfo):
-                        try BindingRelationship(telegramUserId: telegramUserId, arcaeaFriendCode: arcaeaFriendCode)
-                            .save(on: app.db)
-                            .wait()
-                        try update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
+                case let .success(userInfo):
+                    try BindingRelationship(
+                        telegramUserId: telegramUserId,
+                        arcaeaFriendCode: arcaeaFriendCode
+                    )
+                    .save(on: app.db)
+                    .wait()
+                    try update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
 
-                    case .failure(let error):
-                        try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+                case let .failure(error):
+                    try update.message?.reply(
+                        text: "\(error.errorDescription)".markdownV2Escaped,
+                        bot: bot,
+                        parseMode: .markdownV2
+                    )
                 }
-            }                
+            }
         }
         bot.connection.dispatcher.add(handler)
     }
 
     private static func unbindHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/unbind"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/unbind"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -77,29 +92,33 @@ final class DefaultBotHandlers {
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait() {
+                .wait()
+            {
                 // Already bound
                 let userInfo = try StoredUserInfo
-                .query(on: app.db)
-                .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
-                .sort(\.$createdAt)
-                .first()
-                .wait()
+                    .query(on: app.db)
+                    .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
+                    .sort(\.$createdAt)
+                    .first()
+                    .wait()
 
                 try relationship.delete(on: app.db).wait()
-                try update.message?.reply(text: "Goodbye, \(userInfo?.displayName ?? relationship.arcaeaFriendCode).", bot: bot)
+                try update.message?.reply(
+                    text: "Goodbye, \(userInfo?.displayName ?? relationship.arcaeaFriendCode).",
+                    bot: bot
+                )
             } else {
                 // Not bound
 
                 try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
             }
-                
         }
         bot.connection.dispatcher.add(handler)
     }
 
     private static func recentHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/recent"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/recent"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -109,35 +128,48 @@ final class DefaultBotHandlers {
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait() else {
-                    try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
-                    return
-                }
+                .wait()
+            else {
+                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                return
+            }
 
             let result = app.arcaeaLimitedAPI.userInfo(friendCode: relationship.arcaeaFriendCode)
             switch result {
-                case .success(let userInfo):
-                    try update.message?.reply(text: userInfo.formatted(app: app).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            case let .success(userInfo):
+                try update.message?.reply(
+                    text: userInfo.formatted(app: app).markdownV2Escaped,
+                    bot: bot,
+                    parseMode: .markdownV2
+                )
 
-                case .failure(let error):
-                    try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            case let .failure(error):
+                try update.message?.reply(
+                    text: "\(error.errorDescription)".markdownV2Escaped,
+                    bot: bot,
+                    parseMode: .markdownV2
+                )
             }
         }
         bot.connection.dispatcher.add(handler)
     }
 
-
     private static func myHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/my"], options: [.editedUpdates], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(
+            commands: ["/my"],
+            options: [.editedUpdates],
+            botUsername: app.tgConfig?.botUsername
+        ) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
 
             // TODO: - Refine search logic
-            guard let parameters = update.message?.parameters else { app.logger.info("parameters error"); return }
-            guard let searchText = parameters.first else { 
+            guard let parameters = update.message?.parameters
+            else { app.logger.info("parameters error"); return }
+            guard let searchText = parameters.first else {
                 try update.message?.reply(text: "Invalid song name.", bot: bot)
-                return 
+                return
             }
 
             let difficulty: Difficulty = parameters.last?.toDifficulty() ?? .future
@@ -147,37 +179,53 @@ final class DefaultBotHandlers {
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait() else {
-                    try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
-                    return
-                }
+                .wait()
+            else {
+                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                return
+            }
 
             guard let userInfo = try StoredUserInfo
                 .query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
                 .first()
-                .wait() else {
-                    throw Abort(.internalServerError)
-                }
+                .wait()
+            else {
+                throw Abort(.internalServerError)
+            }
 
-            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first else {
+            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            else {
                 try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
 
-            let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
+            let result = app.arcaeaLimitedAPI.scoreInfo(
+                friendCode: relationship.arcaeaFriendCode,
+                difficulty: difficulty,
+                songId: song.sid
+            )
             switch result {
-                case .success(let play):
-                    try update.message?.reply(text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
-                case .failure(let error):
-                    try update.message?.reply(text: "\(error.errorDescription)".markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            case let .success(play):
+                try update.message?.reply(
+                    text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped,
+                    bot: bot,
+                    parseMode: .markdownV2
+                )
+            case let .failure(error):
+                try update.message?.reply(
+                    text: "\(error.errorDescription)".markdownV2Escaped,
+                    bot: bot,
+                    parseMode: .markdownV2
+                )
             }
         }
         bot.connection.dispatcher.add(handler)
     }
 
     private static func best30Handler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/best30"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/best30"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -187,10 +235,11 @@ final class DefaultBotHandlers {
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait() else {
-                    try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
-                    return
-                }
+                .wait()
+            else {
+                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                return
+            }
 
             let userInfo = try StoredUserInfo.query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
@@ -199,23 +248,30 @@ final class DefaultBotHandlers {
 
             let result = app.arcaeaLimitedAPI.bestInfo(friendCode: relationship.arcaeaFriendCode)
             switch result {
-                case .success(let best30):
-                    try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
-                case .failure(let error):
-                    try update.message?.reply(text: "\(error.errorDescription)", bot: bot)
+            case let .success(best30):
+                try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
+            case let .failure(error):
+                try update.message?.reply(text: "\(error.errorDescription)", bot: bot)
             }
         }
         bot.connection.dispatcher.add(handler)
     }
 
     private static func getAliasHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/getalias"], options: [.editedUpdates], botUsername: app.tgConfig?.botUsername) { update, bot in
-            guard update.message?.parameters.count ?? 0 > 0, let searchText = update.message?.parameters.joined(separator: " ") else {
+        let handler = TGCommandHandler(
+            commands: ["/getalias"],
+            options: [.editedUpdates],
+            botUsername: app.tgConfig?.botUsername
+        ) { update, bot in
+            guard update.message?.parameters.count ?? 0 > 0,
+                  let searchText = update.message?.parameters.joined(separator: " ")
+            else {
                 try update.message?.reply(text: "Please specify a song id.", bot: bot)
                 return
             }
 
-            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first else {
+            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            else {
                 try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
@@ -227,13 +283,18 @@ final class DefaultBotHandlers {
                 .map { $0.alias }
                 .joined(separator: "\n")
 
-            try update.message?.reply(text: ("\(song.nameEn)\n`\(song.sid)`\n---\n" + aliases).markdownV2Escaped, bot: bot, parseMode: .markdownV2)
+            try update.message?.reply(
+                text: ("\(song.nameEn)\n`\(song.sid)`\n---\n" + aliases).markdownV2Escaped,
+                bot: bot,
+                parseMode: .markdownV2
+            )
         }
         bot.connection.dispatcher.add(handler)
     }
 
     private static func addAliasHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/addalias"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/addalias"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
@@ -243,10 +304,11 @@ final class DefaultBotHandlers {
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
                 .wait()?
-                .isOperator == true || String(telegramUserId) == app.tgConfig?.adminUserId else {
-                    try update.message?.reply(text: "Sorry, permission denied.", bot: bot)
-                    return
-                }
+                .isOperator == true || String(telegramUserId) == app.tgConfig?.adminUserId
+            else {
+                try update.message?.reply(text: "Sorry, permission denied.", bot: bot)
+                return
+            }
 
             // Parse song id
             guard let searchText = update.message?.parameters.first else {
@@ -277,26 +339,30 @@ final class DefaultBotHandlers {
     }
 
     private static func calHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/cal"], botUsername: app.tgConfig?.botUsername) { update, bot in
+        let handler = TGCommandHandler(commands: ["/cal"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
             guard let searchText = update.message?.parameters.first else {
                 try update.message?.reply(text: "You have to specify a song id or an alias.", bot: bot)
                 return
             }
 
             let score = Int(update.message?.parameters.dropFirst().first ?? "")
-            let difficulty: Difficulty = update.message?.parameters.dropFirst(2).first?.toDifficulty() ?? .future
+            let difficulty: Difficulty = update.message?.parameters.dropFirst(2).first?
+                .toDifficulty() ?? .future
 
-            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first else {
+            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            else {
                 try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
 
             var text = """
             \(song.nameEn) \(difficulty.abbr.capitalized) \(song.constant(of: difficulty))\n
-            """ 
+            """
 
-            text += score != nil ? 
-                "\(score!) -> \(String(format: "%.3f", song.playPtt(difficulty: difficulty, score: score!)))\n------\n" : "" 
+            text += score != nil ?
+                "\(score!) -> \(String(format: "%.3f", song.playPtt(difficulty: difficulty, score: score!)))\n------\n" :
+                ""
 
             text +=
                 [10_000_000, 9_900_000, 9_800_000, 9_500_000, 9_200_000, 8_900_000, 8_600_000]
@@ -326,80 +392,92 @@ final class DefaultBotHandlers {
             if let relationship = try BindingRelationship.query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait() {
-
+                .wait()
+            {
                 // User bound
-                    if inlineQuery.query == "" {
-                        // Query is empty -> /recent
-                        let result = app.arcaeaLimitedAPI.userInfo(friendCode: relationship.arcaeaFriendCode)
+                if inlineQuery.query == "" {
+                    // Query is empty -> /recent
+                    let result = app.arcaeaLimitedAPI.userInfo(friendCode: relationship.arcaeaFriendCode)
+                    switch result {
+                    case let .success(userInfo):
+                        results.append(
+                            .article(
+                                .init(
+                                    type: "article",
+                                    id: UUID().uuidString,
+                                    title: "Recent Play",
+                                    inputMessageContent: .inputTextMessageContent(
+                                        .init(
+                                            messageText: try userInfo.formatted(app: app).markdownV2Escaped,
+                                            parseMode: "markdownV2"
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    case let .failure(error):
+                        queryError = error
+                    }
+                } else {
+                    // Query is not empty -> /my
+                    guard let query = queries.first else { return }
+                    if let song = try Song.search(query, in: app, options: .includeAliases, .exactMatch)
+                        .wait().first
+                    {
+                        let difficulty: Difficulty = queries.dropFirst().first?.toDifficulty() ?? .future
+
+                        let result = app.arcaeaLimitedAPI.scoreInfo(
+                            friendCode: relationship.arcaeaFriendCode,
+                            difficulty: difficulty,
+                            songId: song.sid
+                        )
                         switch result {
-                            case .success(let userInfo):
+                        case let .success(play):
+
+                            if let userInfo = try StoredUserInfo.query(on: app.db)
+                                .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
+                                .first()
+                                .wait()
+                            {
                                 results.append(
                                     .article(
                                         .init(
                                             type: "article",
                                             id: UUID().uuidString,
-                                            title: "Recent Play",
+                                            title: song.nameEn,
                                             inputMessageContent: .inputTextMessageContent(
-                                                .init(messageText: try userInfo.formatted(app: app).markdownV2Escaped, parseMode: "markdownV2")
-                                            )
-                                        )
-                                    )
-                                )
-                            case .failure(let error):
-                                queryError = error
-                        }
-                    } else {
-                        // Query is not empty -> /my
-                        guard let query = queries.first else { return }
-                        if let song = try Song.search(query, in: app, options: .includeAliases, .exactMatch).wait().first {
-
-                            let difficulty: Difficulty = queries.dropFirst().first?.toDifficulty() ?? .future
-
-                            let result = app.arcaeaLimitedAPI.scoreInfo(friendCode: relationship.arcaeaFriendCode, difficulty: difficulty, songId: song.sid)
-                            switch result {
-                                case .success(let play):
-
-                                    if let userInfo = try StoredUserInfo.query(on: app.db)
-                                    .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
-                                    .first()
-                                    .wait() {
-                                        results.append(
-                                            .article(
                                                 .init(
-                                                    type: "article",
-                                                    id: UUID().uuidString,
-                                                    title: song.nameEn,
-                                                    inputMessageContent: .inputTextMessageContent(
-                                                        .init(messageText: try play.formatted(app: app, userInfo: userInfo).markdownV2Escaped, parseMode: "markdownV2")
-                                                    )
+                                                    messageText: try play
+                                                        .formatted(app: app, userInfo: userInfo)
+                                                        .markdownV2Escaped,
+                                                    parseMode: "markdownV2"
                                                 )
                                             )
                                         )
-                                    } else { queryError = Abort(.internalServerError) }  
-                                case .failure(let error):
-                                    queryError = error
-                            }
+                                    )
+                                )
+                            } else { queryError = Abort(.internalServerError) }
+                        case let .failure(error):
+                            queryError = error
+                        }
 
-                            
-                        } else {
-                            results.append(
-                                .article(
-                                    .init(
-                                        type: "article",
-                                        id: UUID().uuidString,
-                                        title: "Error",
-                                        inputMessageContent: .inputTextMessageContent(
-                                            .init(messageText: "There are no songs named \(inlineQuery.query).")
-                                        )
+                    } else {
+                        results.append(
+                            .article(
+                                .init(
+                                    type: "article",
+                                    id: UUID().uuidString,
+                                    title: "Error",
+                                    inputMessageContent: .inputTextMessageContent(
+                                        .init(messageText: "There are no songs named \(inlineQuery.query).")
                                     )
                                 )
                             )
-                        }
+                        )
                     }
-                
-            } else {
+                }
 
+            } else {
                 // User not bound
                 results.append(
                     .article(
@@ -431,7 +509,7 @@ final class DefaultBotHandlers {
             }
 
             let tgAnswerInlineQueryParams = TGAnswerInlineQueryParams(
-                inlineQueryId: inlineQuery.id, 
+                inlineQueryId: inlineQuery.id,
                 results: results,
                 cacheTime: 5
             )

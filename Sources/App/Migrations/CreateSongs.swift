@@ -1,5 +1,5 @@
-import Vapor
 import Fluent
+import Vapor
 
 struct CreateSongs: AsyncMigration {
     func prepare(on database: Database) async throws {

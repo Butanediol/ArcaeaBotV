@@ -19,7 +19,7 @@ public func configure(_ app: Application) throws {
     ), as: .psql)
 
     app.arcaeaLimitedAPIConfiguration = ArcaeaLimitedAPIConfiguration(
-        token: Environment.get("ARCAEA_LIMITED_API_TOKEN") ?? "", 
+        token: Environment.get("ARCAEA_LIMITED_API_TOKEN") ?? "",
         baseUrl: ArcaeaLimitedAPIConfiguration.defaultUrl
     )
 
@@ -36,14 +36,14 @@ public func configure(_ app: Application) throws {
     try routes(app)
 }
 
-fileprivate func configureTelegramBot(_ app: Application) throws {
+private func configureTelegramBot(_ app: Application) throws {
     TGBot.configure(
-        connection: TGLongPollingConnection(), 
-        botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY", 
+        connection: TGLongPollingConnection(),
+        botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
         vaporClient: app.client
     )
     app.tgConfig = .init(
-        botUsername: Environment.get("TELEGRAM_BOT_USERNAME"), 
+        botUsername: Environment.get("TELEGRAM_BOT_USERNAME"),
         adminUserId: Environment.get("TELEGRAM_ADMIN_USERID")
     )
     try TGBot.shared.start()

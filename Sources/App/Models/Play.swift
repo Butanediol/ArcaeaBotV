@@ -1,6 +1,7 @@
 import Vapor
 
 // MARK: - Play
+
 struct Play: Codable {
     let songID: String
     let difficulty: Difficulty
@@ -25,7 +26,7 @@ struct Play: Codable {
 
 extension Play {
     var relativeTime: String {
-        let playDate = Date(timeIntervalSince1970: Double(self.timePlayed / 1000))
+        let playDate = Date(timeIntervalSince1970: Double(timePlayed / 1000))
 
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = Locale(identifier: "en_US")
@@ -33,17 +34,18 @@ extension Play {
     }
 
     func formatted<T: UserInfoProtocol>(app: Application, userInfo: T) throws -> String {
-        let song = try Song.query(on: app.db).filter(\.$sid, .equal, self.songID).first().wait()
+        let song = try Song.query(on: app.db).filter(\.$sid, .equal, songID).first().wait()
 
         let userPtt = userInfo.potential != nil ? String(Double(userInfo.potential!) / 100) : "Hidden"
-        let playPtt = song?.playPtt(difficulty: self.difficulty, score: self.score) ?? -1
+        let playPtt = song?.playPtt(difficulty: difficulty, score: score) ?? -1
 
         return """
-        \(userInfo.displayName)(\(userPtt)) played `\(song?.nameEn ?? self.songID)` \(relativeTime)
-        Difficulty: \(self.difficulty.fullName) (\((song?.constant(of: self.difficulty) ?? -1).formatString(withDigits: 1)))
-        Score: \(self.score)
+        \(userInfo.displayName)(\(userPtt)) played `\(song?.nameEn ?? songID)` \(relativeTime)
+        Difficulty: \(difficulty.fullName) (\((song?.constant(of: difficulty) ?? -1)
+            .formatString(withDigits: 1)))
+        Score: \(score)
         PlayPTT: \(playPtt.formatString(withDigits: 2))
-        \(self.pureCount) (+\(self.shinyPureCount)) / \(self.farCount) / \(self.lostCount)
+        \(pureCount) (+\(shinyPureCount)) / \(farCount) / \(lostCount)
         """
     }
 }
