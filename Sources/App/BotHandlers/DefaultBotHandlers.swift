@@ -14,6 +14,7 @@ final class DefaultBotHandlers {
         addAliasHandler(app: app, bot: bot)
         calHandler(app: app, bot: bot)
         inlineHandler(app: app, bot: bot)
+        statsHandler(app: app, bot: bot)
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -529,6 +530,27 @@ final class DefaultBotHandlers {
             )
 
             try bot.answerInlineQuery(params: tgAnswerInlineQueryParams)
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func statsHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/stats"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
+            let time24hAgo = Date(timeIntervalSinceNow: -86400).timeIntervalSince1970
+            let best30Count = try StoredBest30.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count().wait()
+            let myCount = try StoredPlay.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count().wait()
+            let recentCount = try StoredUserInfo.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count().wait()
+            try update.message?.reply(text: """
+                                      In the last 24 hours, there are total of
+                                      `\(best30Count) /best30` requests,
+                                      `\(myCount) /my` requests,
+                                      `\(recentCount) / recent` requests.
+                                      """.markdownV2Escaped,
+                                      bot: bot, parseMode: .markdownV2)
         }
         bot.connection.dispatcher.add(handler)
     }
