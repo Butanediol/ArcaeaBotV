@@ -15,6 +15,7 @@ final class DefaultBotHandlers {
         calHandler(app: app, bot: bot)
         inlineHandler(app: app, bot: bot)
         statsHandler(app: app, bot: bot)
+        opHandler(app: app, bot: bot)
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -551,6 +552,39 @@ final class DefaultBotHandlers {
                                       `\(recentCount) / recent` requests.
                                       """.markdownV2Escaped,
                                       bot: bot, parseMode: .markdownV2)
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func opHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/op"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
+
+            // Ensure valid telegram user
+            guard let telegramUserId = update.message?.from?.id else { return }
+
+            // Only admin can prompt ops
+            guard String(telegramUserId) == app.tgConfig?.adminUserId else {
+                try update.message?.reply(text: "Sorry, permission denied.", bot: bot)
+                return
+            }
+
+            guard let targetUser = update.message?.replyToMessage?.from?.id else { return }
+
+            guard let relationship = try BindingRelationship.query(on: app.db)
+                .filter(\.$telegramUserId, .equal, targetUser).first().wait()
+            else {
+                try update.message?.reply(text: "User not bound.", bot: bot)
+                return
+            }
+
+            relationship.isOperator.toggle()
+            try relationship.save(on: app.db).wait()
+            if !relationship.isOperator { // Actually, *was* operator
+                try update.message?.reply(text: "This user is not an operator anymore.", bot: bot)
+            } else {
+                try update.message?.reply(text: "This user is now an operator.", bot: bot)
+            }
         }
         bot.connection.dispatcher.add(handler)
     }
