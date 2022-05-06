@@ -28,6 +28,7 @@ public func configure(_ app: Application) throws {
     app.migrations.add(CreateSongs())
     app.migrations.add(CreateAliases())
     app.migrations.add(CreateStoredBest30())
+    app.migrations.add(CreateStoredPlay())
 
     app.views.use(.leaf)
 

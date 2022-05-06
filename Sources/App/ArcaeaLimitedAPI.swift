@@ -77,6 +77,7 @@ extension Application {
             guard let rawResponse = try? get(endpoint: .score(difficulty, friendCode, songId))
             else { return .failure(APIError.networkError) }
             if let bestPlay = try? rawResponse.content.decode(ScoreResponse.self).bestPlay {
+                try? bestPlay.toStored(arcaeaFriendCode: friendCode).save(on: app.db).wait()
                 return .success(bestPlay)
             }
             if let apiError = try? rawResponse.content.decode(APIError.self) {
