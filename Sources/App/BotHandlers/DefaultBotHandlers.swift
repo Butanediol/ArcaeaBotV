@@ -432,7 +432,8 @@ final class DefaultBotHandlers {
 
             let tgAnswerInlineQueryParams = TGAnswerInlineQueryParams(
                 inlineQueryId: inlineQuery.id, 
-                results: results
+                results: results,
+                cacheTime: 5
             )
 
             try bot.answerInlineQuery(params: tgAnswerInlineQueryParams)
