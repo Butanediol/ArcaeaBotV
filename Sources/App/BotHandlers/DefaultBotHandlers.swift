@@ -28,7 +28,7 @@ final class DefaultBotHandlers {
         let handler = TGCommandHandler(commands: ["/bind"], botUsername: app.tgConfig?.botUsername) { update, bot in
 
             // Ensure valid telegram user
-            guard let telegramUserId = update.message?.from?.id else { return }
+            guard let telegramUserId = update.message?.from?.id, telegramUserId != 136817688 else { return }
 
             // Check if already bound.
             if let relationship = try BindingRelationship.query(on: app.db)
@@ -235,7 +235,9 @@ final class DefaultBotHandlers {
                 return
             }
 
+            let alias = try Alias.query(on: app.db).filter(\.$alias == searchText).first().wait()
             guard let song = try Song.query(on: app.db).group(.or, { group in
+                if let alias = alias { group.filter(\.$sid == alias.sid) }
                 group.filter(\.$sid ~~ searchText)
                 group.filter(\.$nameEn ~~ searchText)
                 group.filter(\.$nameJp ~~ searchText)
