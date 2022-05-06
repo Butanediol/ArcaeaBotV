@@ -12,9 +12,11 @@ extension Song {
 		let text = "\(searchText)"
 		let alias: Alias? = options.contains(.includeAliases) ? try Alias.query(on: app.db).filter(\.$alias == text).first().wait() : nil
 
-		let songs = Song.query(on: app.db).group(.or, { group in
-		    if let alias = alias { group.filter(\.$sid == alias.sid) }
+		if let alias = alias {
+			return Song.query(on: app.db).filter(\.$sid, .equal, alias.sid).all()
+		}
 
+		let songs = Song.query(on: app.db).group(.or, { group in
 		    if options.contains(.exactMatch) {
 		    	group.filter(\.$sid == text)
 		    	group.filter(\.$nameEn == text)
