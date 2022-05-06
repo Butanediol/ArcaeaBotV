@@ -89,6 +89,7 @@ extension Application {
             guard let rawResponse = try? get(endpoint: .best(friendCode))
             else { return .failure(APIError.networkError) }
             if let best30 = try? rawResponse.content.decode(Best30Response.self).best30 {
+                try? best30.toStored(friendCode).save(on: app.db).wait()
                 return .success(best30)
             }
             if let apiError = try? rawResponse.content.decode(APIError.self) {
