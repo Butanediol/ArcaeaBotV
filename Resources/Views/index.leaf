@@ -1,17 +1,47 @@
 <!doctype html>
-<html lang="en">
+<html class="light" style="--tg-viewport-height:100vh; --tg-viewport-stable-height:100vh;">
 <head>
+  <title>#(title)</title>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, viewport-fit=cover">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js" type="text/javascript"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'tg-bg-color': window.Telegram.WebApp.themeParams.bg_color,
+            'tg-text-color': window.Telegram.WebApp.themeParams.text_color,
+            'tg-hint-color': window.Telegram.WebApp.themeParams.hint_color,
+            'tg-link-color': window.Telegram.WebApp.themeParams.link_color,
+            'tg-button-color': window.Telegram.WebApp.themeParams.button_color,
+            'tg-button-text-color': window.Telegram.WebApp.themeParams.button_text_color,
+         }
+        }
+      }
+    }
+  </script>
+  <!-- <link href="./static/style.css" rel="stylesheet"> -->
 </head>
 <body>
-  <h1>#(title)</h1>
-  <button onclick="window.Telegram.WebApp.expand()">Expand</button>
-  <button onclick="window.Telegram.WebApp.close()">Close</button>
-  <p class="debug"></p>
-  <script type="text/javascript">
-    document.getElementsByClassName('debug')[0].textContent = window.Telegram.WebApp.toString();
+  <div class="flex flex-col items-center justify-center">
+    <lottie-player src="https://assets6.lottiefiles.com/private_files/lf30_y9czxcb9.json" class="max-w-sm" background="transparent"  speed="1" loop autoplay></lottie-player>
+    <div class="px-8">
+      <p class="font-bold text-tg-text-color text-4xl text-center">Comming S∞n</p>
+    </br>
+      <p class="font-semibold text-tg-text-color text-center">If you see this message, it means that this bot is working.</p>
+      </br>
+      <p class="font-semibold text-tg-text-color text-center">For now, just send <a class="px-2 bg-tg-button-color rounded-full text-tg-button-text-color font-mono" href="https://t.me/SakuraDoubleStarBot?start">/bind</a> to link an Arcaea account.</p>
+    </div>
+  </div>
+  <script>
+    window.Telegram.WebApp.MainButton.enable()
+    window.Telegram.WebApp.MainButton.setText("Close")
+    window.Telegram.WebApp.MainButton.onClick(window.Telegram.WebApp.close)
+    window.Telegram.WebApp.MainButton.show()
   </script>
+
 </body>
 </html>
