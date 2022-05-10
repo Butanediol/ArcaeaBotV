@@ -1,7 +1,7 @@
 <!doctype html>
 <html class="light" style="--tg-viewport-height:100vh; --tg-viewport-stable-height:100vh;">
 <head>
-  <title>#(title)</title>
+  <title>User Info</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, viewport-fit=cover">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -31,29 +31,28 @@
 </head>
 <body class="bg-tg-bg-color">
   <div class="flex flex-col items-center justify-center">
-    <lottie-player src="https://assets6.lottiefiles.com/private_files/lf30_y9czxcb9.json" class="max-w-sm" background="transparent"  speed="1" loop autoplay></lottie-player>
-    <div class="px-8">
-      <p class="font-bold text-tg-text-color text-4xl text-center">Comming S∞n</p>
-    </br>
-      <p class="font-semibold text-tg-text-color text-center">If you see this message, it means that this bot is working.</p>
-      </br>
-      <p class="font-semibold text-tg-text-color text-center">For now, just send 
-        <a class="px-2 bg-tg-button-color rounded-full text-tg-button-text-color font-mono" href="https://t.me/SakuraDoubleStarBot?start">/bind</a>
-      to link an Arcaea account.</p>
 
-      <p class="font-semibold text-tg-text-color text-center">Click 
-        <a class="px-2 bg-tg-button-color rounded-full text-tg-button-text-color font-mono" onclick="location.href = '/userInfo/' + Telegram.WebApp.initDataUnsafe.user.id">here</a>
-      to see your potential history.</p>
-    </div>
+    <table class="table-auto text-tg-text-color">
+      <thead>
+        <tr>
+          <th>Potential</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        #for(userInfo in userInfos):
+        <tr>
+          <td>#(userInfo.potential)</td>
+          <td>#date(userInfo.createdAt, "yyyy-MM-dd")</td>
+        </tr>
+        #endfor
+      </tbody>
+    </table>
   </div>
   <script>
-    function buttonFunction() {
-      location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-    }
     Telegram.WebApp.MainButton.enable()
     Telegram.WebApp.MainButton.setText("Close")
     Telegram.WebApp.MainButton.onClick(Telegram.WebApp.close)
-    // Telegram.WebApp.MainButton.onClick(buttonFunction)
     Telegram.WebApp.MainButton.show()
     Telegram.WebApp.ready()
   </script>

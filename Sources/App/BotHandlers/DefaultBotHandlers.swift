@@ -549,7 +549,7 @@ final class DefaultBotHandlers {
                                       In the last 24 hours, there are total of
                                       `\(best30Count) /best30` requests,
                                       `\(myCount) /my` requests,
-                                      `\(recentCount) / recent` requests.
+                                      `\(recentCount) /recent` requests.
                                       """.markdownV2Escaped,
                                       bot: bot, parseMode: .markdownV2)
         }
