@@ -9,14 +9,13 @@ struct ArcaeaLimitedAPIConfiguration {
 
 struct APIError: LocalizedError, Codable {
     let message: String
-    let errors: String
 
     public var errorDescription: String {
-        "\(message): \(errors)"
+        "\(message)"
     }
 
-    static let networkError = APIError(message: "Network Error", errors: "Should blame 616.")
-    static let unknownError = APIError(message: "Unknown Error", errors: "Unknown Error")
+    static let networkError = APIError(message: "Network Error")
+    static let unknownError = APIError(message: "Unknown Error")
 }
 
 struct ArcaeaLimitedAPIConfigurationKey: StorageKey {
