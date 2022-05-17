@@ -2,6 +2,11 @@
 
 The `V` makes it sounds cooler.
 
+## Dependencies
+
+- `Swift Environment` since we don't provide a pre-compile product, you have to have a runtime or compile a static-linked binary.
+- `postgresql` a database ofc. You can get some `songs` and `aliases` data in `database` folder. Use `pg_dump` or whatever you like to import them.
+
 ## Configuration
 
 Rename `example.env` file to `.env`.
