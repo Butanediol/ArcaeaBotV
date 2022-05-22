@@ -39,6 +39,9 @@ func routes(_ app: Application) throws {
             }
         }()
 
-        return req.fileio.streamFile(at: app.directory.publicDirectory + "songs/\(songId)/\(filename)")
+        let dirPrefix = song.remoteDownload == true ? "dl_" : ""
+
+        return req.fileio
+            .streamFile(at: app.directory.publicDirectory + "songs/\(dirPrefix)\(songId)/\(filename)")
     }
 }
