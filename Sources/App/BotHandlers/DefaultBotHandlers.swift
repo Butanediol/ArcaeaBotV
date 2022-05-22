@@ -230,7 +230,9 @@ final class DefaultBotHandlers {
                 try update.message?.reply(
                     text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped,
                     bot: bot,
-                    parseMode: .markdownV2
+                    parseMode: .markdownV2,
+                    replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: [[CallbackDataEvent
+                            .my(play.songID, play.difficulty).button]]))
                 )
             case let .failure(error):
                 try update.message?.reply(
