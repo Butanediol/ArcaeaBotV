@@ -156,7 +156,10 @@ final class DefaultBotHandlers {
                 try update.message?.reply(
                     text: userInfo.formatted(app: app).markdownV2Escaped,
                     bot: bot,
-                    parseMode: .markdownV2
+                    parseMode: .markdownV2,
+                    replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: [[CallbackDataEvent
+                            .my(userInfo.lastPlayedSong.songID, userInfo.lastPlayedSong.difficulty)
+                            .button]]))
                 )
 
             case let .failure(error):
