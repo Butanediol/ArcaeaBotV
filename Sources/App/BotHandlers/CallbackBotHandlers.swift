@@ -4,11 +4,14 @@ import Vapor
 
 enum CallbackDataEvent: Codable {
     case my(String, Difficulty)
+    case recent
 
     var text: String {
         switch self {
         case .my:
-            return "🔍"
+            return "🔍 /my"
+        case .recent:
+            return "⌚️ /recent"
         }
     }
 
@@ -27,7 +30,12 @@ enum CallbackDataEvent: Codable {
     }
 
     var button: TGInlineKeyboardButton {
-        .init(text: text, callbackData: callbackData)
+        switch self {
+        case let .my(songId, difficulty):
+            return .init(text: text, switchInlineQueryCurrentChat: "\(songId) \(difficulty.abbr)")
+        case .recent:
+            return .init(text: text, switchInlineQueryCurrentChat: "")
+        }
     }
 }
 
@@ -37,7 +45,7 @@ enum CallbackBotHandler {
     }
 
     private static func callbackDispatcher(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCallbackQueryHandler(pattern: ".*") { update, bot in
+        let handler = TGCallbackQueryHandler(pattern: ".*") { update, _ in
             guard let callbackEvent = update.callbackQuery?.data else {
                 app.logger.error("Cannot get callback data.")
                 return
@@ -49,71 +57,12 @@ enum CallbackBotHandler {
             }
 
             switch event {
-            case let .my(songId, difficulty):
-                try myCallbackHandler(
-                    app: app,
-                    bot: bot,
-                    update: update,
-                    songId: songId,
-                    difficulty: difficulty
-                )
+            case .my:
+                break
+            case .recent:
+                break
             }
         }
         bot.connection.dispatcher.add(handler)
-    }
-
-    private static func myCallbackHandler(
-        app: Vapor.Application,
-        bot: TGBotPrtcl,
-        update: TGUpdate,
-        songId: String,
-        difficulty: Difficulty
-    ) throws {
-        // Ensure valid telegram user
-
-        guard let telegramUserId = update.callbackQuery?.from.id else {
-            app.logger.error("Failed to get telegram user.")
-            return
-        }
-
-        // Ensure bound
-        guard let relationship = try BindingRelationship
-            .query(on: app.db)
-            .filter(\.$telegramUserId, .equal, telegramUserId)
-            .first()
-            .wait()
-        else {
-            try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
-            return
-        }
-
-        guard let userInfo = try StoredUserInfo
-            .query(on: app.db)
-            .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
-            .first()
-            .wait()
-        else {
-            throw Abort(.internalServerError)
-        }
-
-        let result = app.arcaeaLimitedAPI.scoreInfo(
-            friendCode: relationship.arcaeaFriendCode,
-            difficulty: difficulty,
-            songId: songId
-        )
-        switch result {
-        case let .success(play):
-            try bot.sendMessage(params: .init(
-                chatId: .chat(update.callbackQuery?.message?.chat.id ?? 0),
-                text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped,
-                parseMode: .markdownV2
-            ))
-        case let .failure(error):
-            try bot.sendMessage(params: .init(
-                chatId: .chat(update.callbackQuery?.message?.chat.id ?? 0),
-                text: "\(error.errorDescription)".markdownV2Escaped,
-                parseMode: .markdownV2
-            ))
-        }
     }
 }

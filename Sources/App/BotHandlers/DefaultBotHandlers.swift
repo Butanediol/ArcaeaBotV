@@ -158,9 +158,13 @@ final class DefaultBotHandlers {
                     text: userInfo.formatted(app: app).markdownV2Escaped,
                     bot: bot,
                     parseMode: .markdownV2,
-                    replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: [[CallbackDataEvent
-                            .my(userInfo.lastPlayedSong.songID, userInfo.lastPlayedSong.difficulty)
-                            .button]]))
+                    replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: [[
+                        CallbackDataEvent.my(
+                            userInfo.lastPlayedSong.songID,
+                            userInfo.lastPlayedSong.difficulty
+                        ).button,
+                        CallbackDataEvent.recent.button,
+                    ]]))
                 )
 
             case let .failure(error):
