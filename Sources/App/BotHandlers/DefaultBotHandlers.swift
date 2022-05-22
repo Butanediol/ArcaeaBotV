@@ -344,17 +344,30 @@ final class DefaultBotHandlers {
 
             let text = try { () -> String in
                 let encoder = JSONEncoder()
-                encoder.outputFormatting = .sortedKeys
+                encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
                 let data = try encoder.encode(song)
                 guard let string = String(data: data, encoding: .utf8)
                 else { throw Abort(.internalServerError) }
                 return string
             }()
 
+            let buttons: [[TGInlineKeyboardButton]] = {
+                if let baseUrl = app.tgConfig?.webAppBaseUrl {
+                    return [[
+                        CallbackDataEvent.img(baseUrl, song.sid, .past).button,
+                        CallbackDataEvent.img(baseUrl, song.sid, .present).button,
+                        CallbackDataEvent.img(baseUrl, song.sid, .future).button,
+                        song.ratingByd != nil ? CallbackDataEvent.img(baseUrl, song.sid, .beyond)
+                            .button : nil,
+                    ].compactMap { $0 }]
+                } else { return [[]] }
+            }()
+
             try update.message?.reply(
                 text: "`\(text)`".markdownV2Escaped,
                 bot: bot,
-                parseMode: .markdownV2
+                parseMode: .markdownV2,
+                replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: buttons))
             )
         }
         bot.connection.dispatcher.add(handler)

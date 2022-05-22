@@ -5,6 +5,7 @@ import Vapor
 enum CallbackDataEvent: Codable {
     case my(String, Difficulty)
     case recent
+    case img(String, String, Difficulty)
 
     var text: String {
         switch self {
@@ -12,6 +13,8 @@ enum CallbackDataEvent: Codable {
             return "🔍 /my"
         case .recent:
             return "⌚️ /recent"
+        case let .img(_, _, difficulty):
+            return "🖼️ Cover \(difficulty.abbr)"
         }
     }
 
@@ -35,6 +38,8 @@ enum CallbackDataEvent: Codable {
             return .init(text: text, switchInlineQueryCurrentChat: "\(songId) \(difficulty.abbr)")
         case .recent:
             return .init(text: text, switchInlineQueryCurrentChat: "")
+        case let .img(baseUrl, songId, difficulty):
+            return .init(text: text, url: baseUrl + "/img/\(songId)/\(difficulty.rawValue)")
         }
     }
 }
@@ -60,6 +65,8 @@ enum CallbackBotHandler {
             case .my:
                 break
             case .recent:
+                break
+            case .img:
                 break
             }
         }
