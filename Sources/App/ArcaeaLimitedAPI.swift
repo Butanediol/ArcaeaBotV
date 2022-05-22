@@ -10,8 +10,8 @@ struct ArcaeaLimitedAPIConfiguration {
 struct APIError: LocalizedError, Codable {
     let message: String
 
-    public var errorDescription: String {
-        "\(message)"
+    public var errorDescription: String? {
+        return message
     }
 
     static let networkError = APIError(message: "Network Error")

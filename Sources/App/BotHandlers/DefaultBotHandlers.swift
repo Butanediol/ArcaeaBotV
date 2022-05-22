@@ -87,7 +87,7 @@ final class DefaultBotHandlers {
 
                 case let .failure(error):
                     try update.message?.reply(
-                        text: "\(error.errorDescription)".markdownV2Escaped,
+                        text: "\(error.errorDescription ?? "Error description found.")".markdownV2Escaped,
                         bot: bot,
                         parseMode: .markdownV2
                     )
@@ -169,7 +169,7 @@ final class DefaultBotHandlers {
 
             case let .failure(error):
                 try update.message?.reply(
-                    text: "\(error.errorDescription)".markdownV2Escaped,
+                    text: "\(error.errorDescription ?? "Error description found.")".markdownV2Escaped,
                     bot: bot,
                     parseMode: .markdownV2
                 )
@@ -240,7 +240,7 @@ final class DefaultBotHandlers {
                 )
             case let .failure(error):
                 try update.message?.reply(
-                    text: "\(error.errorDescription)".markdownV2Escaped,
+                    text: "\(error.errorDescription ?? "Error description found.")".markdownV2Escaped,
                     bot: bot,
                     parseMode: .markdownV2
                 )
@@ -277,7 +277,10 @@ final class DefaultBotHandlers {
             case let .success(best30):
                 try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
             case let .failure(error):
-                try update.message?.reply(text: "\(error.errorDescription)", bot: bot)
+                try update.message?.reply(
+                    text: "\(error.errorDescription ?? "Error description found.")",
+                    bot: bot
+                )
             }
         }
         bot.connection.dispatcher.add(handler)
@@ -532,7 +535,7 @@ final class DefaultBotHandlers {
                                 .init(
                                     type: "article",
                                     id: UUID().uuidString,
-                                    title: "Error",
+                                    title: "Error, no such song.",
                                     inputMessageContent: .inputTextMessageContent(
                                         .init(messageText: "There are no songs named \(inlineQuery.query).")
                                     )
@@ -576,7 +579,7 @@ final class DefaultBotHandlers {
             let tgAnswerInlineQueryParams = TGAnswerInlineQueryParams(
                 inlineQueryId: inlineQuery.id,
                 results: results,
-                cacheTime: 5
+                cacheTime: 1
             )
 
             try bot.answerInlineQuery(params: tgAnswerInlineQueryParams)
