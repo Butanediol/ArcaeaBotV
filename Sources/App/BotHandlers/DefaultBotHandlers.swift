@@ -344,7 +344,7 @@ final class DefaultBotHandlers {
 
             let text = try { () -> String in
                 let encoder = JSONEncoder()
-                encoder.outputFormatting = .prettyPrinted
+                encoder.outputFormatting = .sortedKeys
                 let data = try encoder.encode(song)
                 guard let string = String(data: data, encoding: .utf8)
                 else { throw Abort(.internalServerError) }
