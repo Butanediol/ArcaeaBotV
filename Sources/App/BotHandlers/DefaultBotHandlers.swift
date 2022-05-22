@@ -356,8 +356,10 @@ final class DefaultBotHandlers {
                     return [[
                         CallbackDataEvent.img(baseUrl, song.sid, .past).button,
                         CallbackDataEvent.img(baseUrl, song.sid, .present).button,
+                    ], [
                         CallbackDataEvent.img(baseUrl, song.sid, .future).button,
-                        song.ratingByd != nil ? CallbackDataEvent.img(baseUrl, song.sid, .beyond)
+                        (song.ratingByd != nil && song.ratingByd != -1) ? CallbackDataEvent
+                            .img(baseUrl, song.sid, .beyond)
                             .button : nil,
                     ].compactMap { $0 }]
                 } else { return [[]] }

@@ -14,7 +14,7 @@ enum CallbackDataEvent: Codable {
         case .recent:
             return "⌚️ /recent"
         case let .img(_, _, difficulty):
-            return "🖼️ Cover \(difficulty.abbr)"
+            return "🖼️ Cover \(difficulty.abbr.uppercased())"
         }
     }
 
