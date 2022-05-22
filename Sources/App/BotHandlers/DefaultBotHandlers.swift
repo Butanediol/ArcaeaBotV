@@ -11,6 +11,7 @@ final class DefaultBotHandlers {
         myHandler(app: app, bot: bot)
         best30Handler(app: app, bot: bot)
         getAliasHandler(app: app, bot: bot)
+        getSongHandler(app: app, bot: bot)
         addAliasHandler(app: app, bot: bot)
         calHandler(app: app, bot: bot)
         inlineHandler(app: app, bot: bot)
@@ -295,7 +296,9 @@ final class DefaultBotHandlers {
                 return
             }
 
-            let aliases = try Alias.query(on: app.db)
+            var text = "\(song.nameEn)\n---\n"
+
+            text += try Alias.query(on: app.db)
                 .filter(\.$sid, .equal, song.sid)
                 .all()
                 .wait()
@@ -303,7 +306,44 @@ final class DefaultBotHandlers {
                 .joined(separator: "\n")
 
             try update.message?.reply(
-                text: ("\(song.nameEn)\n`\(song.sid)`\n---\n" + aliases).markdownV2Escaped,
+                text: text.markdownV2Escaped,
+                bot: bot,
+                parseMode: .markdownV2
+            )
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func getSongHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(
+            commands: ["/getsong"],
+            options: [.editedUpdates],
+            botUsername: app.tgConfig?.botUsername
+        ) { update, bot in
+            guard update.message?.parameters.count ?? 0 > 0,
+                  let searchText = update.message?.parameters.joined(separator: " ")
+            else {
+                try update.message?.reply(text: "Please specify a song id.", bot: bot)
+                return
+            }
+
+            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            else {
+                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                return
+            }
+
+            let text = try { () -> String in
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = .prettyPrinted
+                let data = try encoder.encode(song)
+                guard let string = String(data: data, encoding: .utf8)
+                else { throw Abort(.internalServerError) }
+                return string
+            }()
+
+            try update.message?.reply(
+                text: "`\(text)`".markdownV2Escaped,
                 bot: bot,
                 parseMode: .markdownV2
             )
