@@ -50,7 +50,7 @@ private func configureTelegramBot(_ app: Application) throws {
         webAppBaseUrl: Environment.get("WEB_APP_BASE_URL")
     )
     try TGBot.shared.start()
-    TGBot.log.logLevel = .info
+    TGBot.log.logLevel = app.logger.logLevel
     DefaultBotHandlers.addhandlers(app: app, bot: TGBot.shared)
     CallbackBotHandler.addhandlers(app: app, bot: TGBot.shared)
 }
