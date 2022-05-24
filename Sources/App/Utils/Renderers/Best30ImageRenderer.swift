@@ -117,7 +117,7 @@ class Best30ImageRenderer {
                 return .bydRed
             }
         }
-        image.renderText(
+        let titleBoundingBox = image.renderText(
             title,
             from: songTitlePoint,
             fontList: [titleFont],
@@ -155,22 +155,24 @@ class Best30ImageRenderer {
             size: titleFontSize
         )
 
-        for x in canvasSize.width - 90 * scale ..< canvasSize.width {
-            let ratio = 1 - Double(x - canvasSize.width + 90 * scale) / Double(90 * scale)
-            for y in songTitlePoint.y - Int(titleFontSize) ..< songTitlePoint.y * 2 {
-                var color: Color {
-                    let original = image.get(pixel: Point(x: x, y: y))
-                    return .init(
-                        red: original
-                            .redComponent * ratio,
-                        green: original
-                            .greenComponent * ratio,
-                        blue: original
-                            .blueComponent * ratio,
-                        alpha: 1
-                    )
+        if titleBoundingBox.upperRight.x > canvasSize.width {
+            for x in canvasSize.width - 90 * scale ..< canvasSize.width {
+                let ratio = pow(1 - Double(x - canvasSize.width + 90 * scale) / Double(90 * scale), 0.5)
+                for y in titleBoundingBox.upperRight.y ... titleBoundingBox.lowerRight.y {
+                    var color: Color {
+                        let original = image.get(pixel: Point(x: x, y: y))
+                        return .init(
+                            red: original
+                                .redComponent * ratio,
+                            green: original
+                                .greenComponent * ratio,
+                            blue: original
+                                .blueComponent * ratio,
+                            alpha: 1
+                        )
+                    }
+                    image.set(pixel: Point(x: x, y: y), to: color)
                 }
-                image.set(pixel: Point(x: x, y: y), to: color)
             }
         }
 
