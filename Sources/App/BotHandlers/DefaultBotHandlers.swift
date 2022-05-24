@@ -277,6 +277,18 @@ final class DefaultBotHandlers {
             switch result {
             case let .success(best30):
                 try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
+
+                let renderer = try Best30ImageRenderer()
+                let songs = try Song.query(on: app.db).all().wait()
+                let image = try renderer.render(
+                    best30.toStored(relationship.arcaeaFriendCode),
+                    songs: songs
+                )
+
+                try bot.sendPhoto(params: .init(
+                    chatId: .chat(update.message?.chat.id ?? 0),
+                    photo: .file(.init(filename: "best30", data: try image.export()))
+                ))
             case let .failure(error):
                 try update.message?.reply(
                     text: "\(error.errorDescription ?? "Error description found.")",

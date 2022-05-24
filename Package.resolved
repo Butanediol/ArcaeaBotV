@@ -208,6 +208,15 @@
       }
     },
     {
+      "identity" : "swiftgd",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/twostraws/SwiftGD.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "499da4a1618f4dce7fbec871ad926ea6880b0673"
+      }
+    },
+    {
       "identity" : "telegram-vapor-bot",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nerzh/telegram-vapor-bot",
