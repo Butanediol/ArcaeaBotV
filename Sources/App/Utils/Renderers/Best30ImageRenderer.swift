@@ -17,6 +17,7 @@ extension Color {
     static let prsGreen = Color(red: 199 / 255, green: 248 / 255, blue: 78 / 255, alpha: 1)
     static let ftrPurple = Color(red: 195 / 255, green: 133 / 255, blue: 244 / 255, alpha: 1)
     static let bydRed = Color(red: 255 / 255, green: 130 / 255, blue: 136 / 255, alpha: 1)
+    static let sexYellow = Color(red: 255 / 255, green: 225 / 255, blue: 82 / 255, alpha: 1)
 }
 
 class Best30ImageRenderer {
@@ -151,7 +152,7 @@ class Best30ImageRenderer {
             "\(play.score)",
             from: scorePoint,
             fontList: [font],
-            color: .white,
+            color: (play.farCount + play.lostCount == 1) ? .sexYellow : .white,
             size: titleFontSize
         )
 
