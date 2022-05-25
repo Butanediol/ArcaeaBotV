@@ -579,6 +579,29 @@ bd9db260-415e-461a-b899-c3595982d4cb	rabbitintheblackroom	数一被关进黑房�
 7ac5bcef-4f79-4e50-b868-4565e1586d57	singularity	ifyoucan
 9a6c82dd-ac44-40dc-8634-4536531815ca	singularity	ifucan
 f530629e-9262-4a8e-8cf5-a36f9a872f76	gimmedablood	血来
+a5c7a551-e587-4de6-8151-acf31fbf2929	picopicotranslation	pico
+55f6abe4-3a70-462d-abf2-b0480e921d67	toaliceliddell	致爱丽丝
+744ba91f-a312-4b77-b03b-a92b1ffa3c1c	quonwacca	quon2
+4e7b824b-6acd-4c52-84b4-773f2e048f12	soundwitch	sandwich
+c2b26326-b4aa-49ce-829d-58e4eefe16bd	etherstrike	es
+33459a1f-9a1b-45c3-97b5-06879940986c	soundwitch	soundbitch
+5ba2d73d-9bc6-4b09-b407-333fa31492b2	memoryforest	内存森林
+404be4ec-62c1-45f0-8ce3-3c744cec1373	kyogenkigo	狂言绮语
+b3d76473-766d-4f65-8d90-6f3334f15064	kyogenkigo	狂言綺語
+539d7da3-718e-43aa-8b66-63da491d9367	kyogenkigo	fe
+3515e9bf-7320-4010-8fbe-d1025803ee2a	bookmaker	博彩公司
+b093b81c-ff91-4cae-827d-9578d80d0cc5	sulfur	苏菲
+2b8d8087-0aa2-4b8f-a5a3-05265cedd884	einherjar	joker
+6bd0017c-b3ac-4fca-b1dc-6b987855da1f	einherjar	ej
+08877811-c401-46c2-9b7d-77500a2f723d	impurebird	farbird
+e3cba5ca-5917-4a66-af2a-1ec78ccd2937	viyellastears	维也纳眼泪
+541edd59-8753-4433-b732-e046810ab999	viyellastears	维也纳的眼泪
+480b534a-c39e-41f0-a2e0-d688aa52dcb4	viyellastears	維也納的眼淚
+1bd5242e-865b-4d7a-8d5e-a8b803bcf53e	livefastdieyoung	活快死早
+e9c059bf-1a69-4fca-9cb1-4e7e733ccc41	livefastdieyoung	快活早死
+32ce4448-235d-4a8a-a043-27595b84e84a	metallicpunisher	mp
+07e57616-9224-4557-ba22-8308ef17c83a	mu	µ
+dc548c4c-e987-4ee3-bbd0-55dcbc479bb2	mu	mu
 \.
 
 
