@@ -105,7 +105,7 @@ class Best30ImageRenderer {
         )
 
         // Song title
-        let title = song.nameJp != "" ? song.nameJp ?? "Nil" : song.nameEn
+        let title = song.nameJp ?? song.nameEn
         var titleColor: Color {
             switch play.difficulty {
             case .past:
