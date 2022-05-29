@@ -2,7 +2,7 @@ import Fluent
 import telegram_vapor_bot
 import Vapor
 
-final class DefaultBotHandlers {
+enum DefaultBotHandlers {
     static func addhandlers(app: Vapor.Application, bot: TGBotPrtcl) {
         startHandler(app: app, bot: bot)
         bindHandler(app: app, bot: bot)
@@ -628,6 +628,8 @@ final class DefaultBotHandlers {
             let recentCount = try StoredUserInfo.query(on: app.db)
                 .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count().wait()
             try update.message?.reply(text: """
+                                      \(memoryReport())
+
                                       In the last 24 hours, there are total of
                                       `\(best30Count) /best30` requests,
                                       `\(myCount) /my` requests,
