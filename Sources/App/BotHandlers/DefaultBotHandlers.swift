@@ -279,9 +279,8 @@ enum DefaultBotHandlers {
             case let .success(best30):
                 try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
 
-                let renderer = try Best30ImageRenderer()
                 let songs = try Song.query(on: app.db).all().wait()
-                let image = try renderer.render(
+                let image = try app.imageRenderer.render(
                     best30.toStored(relationship.arcaeaFriendCode),
                     songs: songs
                 )

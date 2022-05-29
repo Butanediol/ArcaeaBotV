@@ -1,5 +1,6 @@
 import Foundation
 import SwiftGD
+import Vapor
 
 extension Image {
     func draw(image: Image, on point: Point) {
@@ -18,6 +19,21 @@ extension Color {
     static let ftrPurple = Color(red: 195 / 255, green: 133 / 255, blue: 244 / 255, alpha: 1)
     static let bydRed = Color(red: 255 / 255, green: 130 / 255, blue: 136 / 255, alpha: 1)
     static let sexYellow = Color(red: 255 / 255, green: 225 / 255, blue: 82 / 255, alpha: 1)
+}
+
+extension Application {
+    var imageRenderer: Best30ImageRenderer! {
+        get {
+            storage[ImageRendererKey.self]
+        }
+        set {
+            storage[ImageRendererKey.self] = newValue
+        }
+    }
+}
+
+struct ImageRendererKey: StorageKey {
+    typealias Value = Best30ImageRenderer
 }
 
 class Best30ImageRenderer {

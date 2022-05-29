@@ -49,15 +49,13 @@ func routes(_ app: Application) throws {
         guard let recordId = req.parameters.get("id"),
               let recordUuid = UUID(uuidString: recordId) else { throw Abort(.badRequest) }
 
-        let renderer = try Best30ImageRenderer()
-
         let songs = try await Song.query(on: req.db).all()
 
         guard let best30 = try await StoredBest30.query(on: req.db)
             .filter(\.$id == recordUuid)
             .first() else { throw Abort(.internalServerError) }
 
-        let image = try renderer.render(
+        let image = try app.imageRenderer.render(
             best30,
             songs: songs
         )

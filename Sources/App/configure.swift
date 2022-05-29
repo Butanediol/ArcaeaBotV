@@ -23,6 +23,8 @@ public func configure(_ app: Application) throws {
         baseUrl: ArcaeaLimitedAPIConfiguration.defaultUrl
     )
 
+    app.imageRenderer = try .init()
+
     app.migrations.add(CreateBindingRelationship())
     app.migrations.add(CreateStoredUserInfo())
     app.migrations.add(CreateSongs())
