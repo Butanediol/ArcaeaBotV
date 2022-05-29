@@ -533,6 +533,7 @@ final class DefaultBotHandlers {
 
                             if let userInfo = try StoredUserInfo.query(on: app.db)
                                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
+                                .sort(\.$createdAt, .descending)
                                 .first()
                                 .wait()
                             {
