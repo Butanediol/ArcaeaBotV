@@ -44,4 +44,24 @@ func routes(_ app: Application) throws {
         return req.fileio
             .streamFile(at: app.directory.publicDirectory + "songs/\(dirPrefix)\(songId)/\(filename)")
     }
+
+    app.get("img", "best30", ":id") { req async throws -> Response in
+        guard let recordId = req.parameters.get("id"),
+              let recordUuid = UUID(uuidString: recordId) else { throw Abort(.badRequest) }
+
+        let renderer = try Best30ImageRenderer()
+
+        let songs = try await Song.query(on: req.db).all()
+
+        guard let best30 = try await StoredBest30.query(on: req.db)
+            .filter(\.$id == recordUuid)
+            .first() else { throw Abort(.internalServerError) }
+
+        let image = try renderer.render(
+            best30,
+            songs: songs
+        )
+
+        return .init(status: .ok, body: .init(data: try image.export()))
+    }
 }
