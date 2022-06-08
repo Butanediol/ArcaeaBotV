@@ -318,7 +318,7 @@ enum DefaultBotHandlers {
                 return
             }
 
-            var text = "\(song.nameEn)\n---\n"
+            var text = "\(song.nameEn)\n`\(song.sid)`\n---\n"
 
             text += try Alias.query(on: app.db)
                 .filter(\.$sid, .equal, song.sid)
