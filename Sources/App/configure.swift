@@ -54,5 +54,6 @@ private func configureTelegramBot(_ app: Application) throws {
     try TGBot.shared.start()
     TGBot.log.logLevel = app.logger.logLevel
     DefaultBotHandlers.addhandlers(app: app, bot: TGBot.shared)
+    InlineBotHandlers.addhandlers(app: app, bot: TGBot.shared)
     CallbackBotHandler.addhandlers(app: app, bot: TGBot.shared)
 }
