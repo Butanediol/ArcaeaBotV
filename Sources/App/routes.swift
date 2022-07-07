@@ -62,4 +62,51 @@ func routes(_ app: Application) throws {
 
         return .init(status: .ok, body: .init(data: try image.export()))
     }
+
+    app.on(.POST, "songlist", body: .collect(maxSize: "1mb")) { req async throws -> Response in
+        guard let buffer = try await req.body.collect().get() else { throw Abort(.badRequest) }
+        let songlist = try! JSONDecoder().decode(SongList.self, from: buffer)
+        // guard let songlist = try? JSONDecoder().decode(SongList.self, from: buffer)
+        // else { throw Abort(.unprocessableEntity) }
+
+        for song in songlist.songs {
+            // Song already exists.
+            if try await Song.query(on: req.db).filter(\.$sid, .equal, song.id).count() != 0 { continue }
+
+            let newSong = Song(
+                sid: song.id,
+                nameEn: song.titleLocalized.en,
+                nameJp: song.titleLocalized.ja,
+                bpm: song.bpm,
+                bpmBase: Int(song.bpmBase),
+                packset: song.songSet,
+                artist: song.artist,
+                side: song.side,
+                date: Double(song.date),
+                version: song.version,
+                worldUnlock: song.worldUnlock ?? false,
+                remoteDownload: song.remoteDL ?? false,
+                difficultyPst: song.prs?.difficulty ?? -1,
+                difficultyPrs: song.prs?.difficulty ?? -1,
+                difficultyFtr: song.ftr?.difficulty ?? -1,
+                difficultyByd: song.byd?.difficulty ?? -1,
+                chartDesignerPst: song.pst?.chartDesigner,
+                chartDesignerPrs: song.prs?.chartDesigner,
+                chartDesignerFtr: song.ftr?.chartDesigner,
+                chartDesignerByd: song.byd?.chartDesigner,
+                jacketDesignerPst: song.pst?.jacketDesigner,
+                jacketDesignerPrs: song.prs?.jacketDesigner,
+                jacketDesignerFtr: song.ftr?.jacketDesigner,
+                jacketDesignerByd: song.byd?.jacketDesigner,
+                jacketOverridePst: song.pst?.jacketOverride,
+                jacketOverridePrs: song.prs?.jacketOverride,
+                jacketOverrideFtr: song.ftr?.jacketOverride,
+                jacketOverrideByd: song.byd?.jacketOverride
+            )
+
+            try await newSong.save(on: req.db)
+        }
+
+        return .init(status: .ok)
+    }
 }

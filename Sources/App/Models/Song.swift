@@ -71,13 +71,13 @@ final class Song: Model, Content {
     var difficultyByd: Int?
 
     @Field(key: "notes_pst")
-    var notesPst: Int?
+    var notesPst: Int
 
     @Field(key: "notes_prs")
-    var notesPrs: Int?
+    var notesPrs: Int
 
     @Field(key: "notes_ftr")
-    var notesFtr: Int?
+    var notesFtr: Int
 
     @Field(key: "notes_byd")
     var notesByd: Int
@@ -119,6 +119,85 @@ final class Song: Model, Content {
     var jacketOverrideByd: Bool?
 
     init() {}
+
+    init(
+        sid: String,
+        nameEn: String,
+        nameJp: String? = nil,
+        bpm: String,
+        bpmBase: Int,
+        packset: String,
+        artist: String,
+        time: Int? = nil,
+        side: Int,
+        date: Double,
+        version: String,
+        worldUnlock: Bool,
+        remoteDownload: Bool,
+        ratingPst: Int? = nil,
+        ratingPrs: Int? = nil,
+        ratingFtr: Int? = nil,
+        ratingByd: Int? = nil,
+        difficultyPst: Int,
+        difficultyPrs: Int,
+        difficultyFtr: Int,
+        difficultyByd: Int? = nil,
+        notesPst: Int? = nil,
+        notesPrs: Int? = nil,
+        notesFtr: Int? = nil,
+        notesByd: Int? = nil,
+        chartDesignerPst: String? = nil,
+        chartDesignerPrs: String? = nil,
+        chartDesignerFtr: String? = nil,
+        chartDesignerByd: String? = nil,
+        jacketDesignerPst: String? = nil,
+        jacketDesignerPrs: String? = nil,
+        jacketDesignerFtr: String? = nil,
+        jacketDesignerByd: String? = nil,
+        jacketOverridePst: Bool? = nil,
+        jacketOverridePrs: Bool? = nil,
+        jacketOverrideFtr: Bool? = nil,
+        jacketOverrideByd: Bool? = nil
+    ) {
+        id = UUID()
+        self.sid = sid
+        self.nameEn = nameEn
+        self.nameJp = nameJp
+        self.bpm = bpm
+        self.bpmBase = bpmBase
+        self.packset = packset
+        self.artist = artist
+        self.time = time ?? 0
+        self.side = side
+        self.date = date
+        self.version = version
+        self.worldUnlock = worldUnlock
+        self.remoteDownload = remoteDownload
+        self.ratingPst = ratingPst ?? 0
+        self.ratingPrs = ratingPrs ?? 0
+        self.ratingFtr = ratingFtr ?? 0
+        self.ratingByd = ratingByd ?? 0
+        self.difficultyPst = difficultyPst
+        self.difficultyPrs = difficultyPrs
+        self.difficultyFtr = difficultyFtr
+        self.difficultyByd = difficultyByd
+        self.notesPst = notesPst ?? 0
+        self.notesPrs = notesPrs ?? 0
+        self.notesFtr = notesFtr ?? 0
+        self.notesByd = notesByd ?? 0
+        self.chartDesignerPst = chartDesignerPst ?? ""
+        self.chartDesignerPrs = chartDesignerPrs ?? ""
+        self.chartDesignerFtr = chartDesignerFtr ?? ""
+        self.chartDesignerByd = chartDesignerByd
+        self.jacketDesignerPst = jacketDesignerPst ?? ""
+        self.jacketDesignerPrs = jacketDesignerPrs ?? ""
+        self.jacketDesignerFtr = jacketDesignerFtr ?? ""
+        self.jacketDesignerByd = jacketDesignerByd
+        self.jacketOverridePst = jacketOverridePst ?? false
+        self.jacketOverridePrs = jacketOverridePrs ?? false
+        self.jacketOverrideFtr = jacketOverrideFtr ?? false
+        self.jacketOverrideByd = jacketOverrideByd
+    }
 }
 
 extension Song {
