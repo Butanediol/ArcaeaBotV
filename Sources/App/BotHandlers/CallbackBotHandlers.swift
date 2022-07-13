@@ -6,6 +6,7 @@ enum CallbackDataEvent: Codable {
     case my(String, Difficulty)
     case recent
     case img(String, String, Difficulty)
+    case b30Url(baseUrl: String, uuid: UUID?)
 
     var text: String {
         switch self {
@@ -15,6 +16,8 @@ enum CallbackDataEvent: Codable {
             return "⌚️ /recent"
         case let .img(_, _, difficulty):
             return "🖼️ Cover \(difficulty.abbr.uppercased())"
+        case .b30Url:
+            return "🔗 Share Link"
         }
     }
 
@@ -40,6 +43,8 @@ enum CallbackDataEvent: Codable {
             return .init(text: text, switchInlineQueryCurrentChat: "")
         case let .img(baseUrl, songId, difficulty):
             return .init(text: text, url: baseUrl + "/img/\(songId)/\(difficulty.rawValue)")
+        case let .b30Url(baseUrl, id):
+            return .init(text: text, url: baseUrl + "/img/best30/\(id?.uuidString ?? .empty)")
         }
     }
 }
@@ -67,6 +72,8 @@ enum CallbackBotHandler {
             case .recent:
                 break
             case .img:
+                break
+            case .b30Url:
                 break
             }
         }

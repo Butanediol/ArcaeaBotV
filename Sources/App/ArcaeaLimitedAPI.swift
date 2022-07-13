@@ -85,12 +85,13 @@ extension Application {
             return .failure(APIError.unknownError)
         }
 
-        func bestInfo(friendCode: ArcaeaFriendCode) -> Result<Best30, APIError> {
+        func bestInfo(friendCode: ArcaeaFriendCode) -> Result<(Best30, StoredBest30), APIError> {
             guard let rawResponse = try? get(endpoint: .best(friendCode))
             else { return .failure(APIError.networkError) }
             if let best30 = try? rawResponse.content.decode(Best30Response.self).best30 {
-                try? best30.toStored(friendCode).save(on: app.db).wait()
-                return .success(best30)
+                let storedBest30 = best30.toStored(friendCode)
+                try? storedBest30.save(on: app.db).wait()
+                return .success((best30, storedBest30))
             }
             if let apiError = try? rawResponse.content.decode(APIError.self) {
                 return .failure(apiError)

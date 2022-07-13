@@ -51,11 +51,15 @@ class Best30ImageRenderer {
         self.titleFont = titleFont
     }
 
-    func render(_ best30: StoredBest30, songs: [Song], scale: Int? = nil) throws -> Image {
+    func render(_ best30: StoredBest30, songs: [Song],
+                scale: Int? = nil) throws -> Image
+    {
         return try render(best30, songs: songs, scale: min(scale ?? 2, 10))
     }
 
-    func render(_ best30: StoredBest30, songs: [Song], scale: Int) throws -> Image {
+    func render(_ best30: StoredBest30, songs: [Song],
+                scale: Int) throws -> Image
+    {
         let canvasSize = Size(width: 1286 * scale, height: 965 * scale)
 
         guard let image = Image(width: canvasSize.width, height: canvasSize.height)
@@ -75,6 +79,18 @@ class Best30ImageRenderer {
             )
         }
 
+        // Watermark
+        image.renderText(
+            """
+            Crafted by @SakuraDoubleStarBot
+            \(Date())
+            \(best30.id?.uuidString ?? .empty)
+            """,
+            from: Point(x: 103 * scale, y: (73 + 6 * 140) * scale),
+            fontList: [font],
+            color: .init(red: 1, green: 1, blue: 1, alpha: 0.5),
+            size: Double(10 * scale)
+        )
         return image
     }
 

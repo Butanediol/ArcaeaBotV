@@ -276,14 +276,13 @@ enum DefaultBotHandlers {
                 .first()
                 .wait()
 
-            let result = app.arcaeaLimitedAPI.bestInfo(friendCode: relationship.arcaeaFriendCode)
-            switch result {
-            case let .success(best30):
+            switch app.arcaeaLimitedAPI.bestInfo(friendCode: relationship.arcaeaFriendCode) {
+            case let .success((best30, storedBest30)):
                 try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
 
                 let songs = try Song.query(on: app.db).all().wait()
                 let image = try app.imageRenderer.render(
-                    best30.toStored(relationship.arcaeaFriendCode),
+                    storedBest30,
                     songs: songs,
                     scale: scale
                 )
@@ -302,7 +301,14 @@ enum DefaultBotHandlers {
                     // Send photo as compressed image
                     try bot.sendPhoto(params: .init(
                         chatId: .chat(update.message?.chat.id ?? .zero),
-                        photo: .file(.init(filename: "best30", data: try image.export()))
+                        photo: .file(.init(filename: "best30", data: try image.export())),
+                        replyMarkup: app.tgConfig?
+                            .webAppBaseUrl == nil ? nil : .inlineKeyboardMarkup(.init(inlineKeyboard: [[
+                                CallbackDataEvent.b30Url(
+                                    baseUrl: app.tgConfig!.webAppBaseUrl!,
+                                    uuid: storedBest30.id
+                                ).button,
+                            ]]))
                     ))
                 }
 
