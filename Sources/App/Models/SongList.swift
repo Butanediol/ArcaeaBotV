@@ -18,6 +18,7 @@ struct SongList: Codable {
         let songSet, purchase: String
         let audioPreview, audioPreviewEnd, side: Int
         let bg: String
+        let bgInverse: String?
         let date: Int
         let version: String
         let difficulties: [SongList.Difficulty]
@@ -37,7 +38,9 @@ struct SongList: Codable {
             case artist, bpm
             case bpmBase = "bpm_base"
             case songSet = "set"
-            case purchase, audioPreview, audioPreviewEnd, side, bg, date, version, difficulties
+            case purchase, audioPreview, audioPreviewEnd, side, bg
+            case bgInverse = "bg_inverse"
+            case date, version, difficulties
             case worldUnlock = "world_unlock"
             case remoteDL = "remote_dl"
             case sourceLocalized = "source_localized"
@@ -75,7 +78,7 @@ struct SongList: Codable {
         let audioOverride: Bool?
         let bg: String?
         let plusFingers: Bool?
-        let artist, bpm: String?
+        let artist, bgInverse, bpm: String?
         let bpmBase: Int?
         let jacketNight: String?
         let hiddenUntilUnlocked: Bool?
@@ -85,7 +88,9 @@ struct SongList: Codable {
         enum CodingKeys: String, CodingKey {
             case ratingClass, chartDesigner, jacketDesigner, rating, jacketOverride, ratingPlus, date, version
             case titleLocalized = "title_localized"
-            case audioOverride, bg, plusFingers, artist, bpm
+            case audioOverride, bg, plusFingers, artist
+            case bgInverse = "bg_inverse"
+            case bpm
             case bpmBase = "bpm_base"
             case jacketNight = "jacket_night"
             case hiddenUntilUnlocked = "hidden_until_unlocked"
@@ -95,6 +100,7 @@ struct SongList: Codable {
     }
 
     enum HiddenUntil: String, Codable {
+        case always
         case difficulty
         case none
         case song
