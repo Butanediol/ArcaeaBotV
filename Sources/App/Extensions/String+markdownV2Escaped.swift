@@ -10,3 +10,8 @@ extension String {
         return escaped
     }
 }
+
+extension String {
+    static let space = " "
+    static let empty = ""
+}

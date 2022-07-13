@@ -267,6 +267,9 @@ enum DefaultBotHandlers {
                 return
             }
 
+            // Get scale factor
+            let scale = Int(update.message?.parameters.first ?? .empty)
+
             let userInfo = try StoredUserInfo.query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
                 .sort(\.$createdAt, .descending)
@@ -281,13 +284,28 @@ enum DefaultBotHandlers {
                 let songs = try Song.query(on: app.db).all().wait()
                 let image = try app.imageRenderer.render(
                     best30.toStored(relationship.arcaeaFriendCode),
-                    songs: songs
+                    songs: songs,
+                    scale: scale
                 )
 
-                try bot.sendPhoto(params: .init(
-                    chatId: .chat(update.message?.chat.id ?? 0),
-                    photo: .file(.init(filename: "best30", data: try image.export()))
-                ))
+                if scale != nil {
+                    // Send original photo as document
+                    try bot.sendDocument(params: .init(
+                        chatId: .chat(update.message?.chat.id ?? .zero),
+                        document: .file(.init(
+                            filename: "\(userInfo?.displayName ?? "$displayName")_best30_\(Date()).png",
+                            data: image.export(),
+                            mimeType: "image/png"
+                        ))
+                    ))
+                } else {
+                    // Send photo as compressed image
+                    try bot.sendPhoto(params: .init(
+                        chatId: .chat(update.message?.chat.id ?? .zero),
+                        photo: .file(.init(filename: "best30", data: try image.export()))
+                    ))
+                }
+
             case let .failure(error):
                 try update.message?.reply(
                     text: "\(error.errorDescription ?? "Error description found.")",
@@ -304,7 +322,7 @@ enum DefaultBotHandlers {
             options: [.editedUpdates],
             botUsername: app.tgConfig?.botUsername
         ) { update, bot in
-            guard update.message?.parameters.count ?? 0 > 0,
+            guard update.message?.parameters.count ?? .zero > .zero,
                   let searchText = update.message?.parameters.joined(separator: " ")
             else {
                 try update.message?.reply(text: "Please specify a song id.", bot: bot)
@@ -341,7 +359,7 @@ enum DefaultBotHandlers {
             options: [.editedUpdates],
             botUsername: app.tgConfig?.botUsername
         ) { update, bot in
-            guard update.message?.parameters.count ?? 0 > 0,
+            guard update.message?.parameters.count ?? .zero > .zero,
                   let searchText = update.message?.parameters.joined(separator: " ")
             else {
                 try update.message?.reply(text: "Please specify a song id.", bot: bot)
@@ -441,7 +459,7 @@ enum DefaultBotHandlers {
                 return
             }
 
-            let score = Int(update.message?.parameters.dropFirst().first ?? "")
+            let score = Int(update.message?.parameters.dropFirst().first ?? .empty)
             let difficulty: Difficulty = update.message?.parameters.dropFirst(2).first?
                 .toDifficulty() ?? .future
 
