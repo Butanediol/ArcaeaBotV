@@ -128,7 +128,7 @@ enum CallbackBotHandler {
 
         let allHistory = try StoredPlay.query(on: app.db)
             .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
-            .sort(\.$timePlayed).all().wait()
+            .sort(\.$timePlayed, .descending).all().wait()
 
         guard let index = allHistory.firstIndex(where: { $0.id == uuid }) else {
             try bot
