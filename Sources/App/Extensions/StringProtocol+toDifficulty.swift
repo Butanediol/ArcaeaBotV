@@ -1,18 +1,16 @@
 extension StringProtocol {
-    func toDifficulty(defaultDifficulty: Difficulty = .future) -> Difficulty {
-        var difficulty: Difficulty = defaultDifficulty
+    func toDifficulty() -> Difficulty? {
         switch self {
         case "pst", "past":
-            difficulty = .past
+            return .past
         case "prs", "present":
-            difficulty = .present
+            return .present
         case "ftr", "future":
-            difficulty = .future
+            return .future
         case "byn", "byd", "beyond":
-            difficulty = .beyond
+            return .beyond
         default:
-            break
+            return nil
         }
-        return difficulty
     }
 }

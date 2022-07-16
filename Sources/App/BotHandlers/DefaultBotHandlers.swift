@@ -465,9 +465,11 @@ enum DefaultBotHandlers {
                 return
             }
 
-            let score = Int(update.message?.parameters.dropFirst().first ?? .empty)
-            let difficulty: Difficulty = update.message?.parameters.dropFirst(2).first?
-                .toDifficulty() ?? .future
+            let score: Int? = Int(update.message?.parameters.dropFirst().first ?? .empty) ??
+                Int(update.message?.parameters.dropFirst(2).first ?? .empty)
+
+            let difficulty: Difficulty = update.message?.parameters.dropFirst().first?.toDifficulty() ??
+                update.message?.parameters.dropFirst(2).first?.toDifficulty() ?? .future
 
             guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
             else {
