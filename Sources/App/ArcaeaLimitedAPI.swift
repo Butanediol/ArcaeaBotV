@@ -62,6 +62,7 @@ extension Application {
             else { return .failure(APIError.networkError) }
             if let userInfo = try? rawResponse.content.decode(UserInfoResponse.self).userInfo {
                 try? userInfo.toStored(friendCode: friendCode).save(on: app.db).wait()
+                try? userInfo.lastPlayedSong.toStored(arcaeaFriendCode: friendCode).save(on: app.db).wait()
                 return .success(userInfo)
             }
             if let apiError = try? rawResponse.content.decode(APIError.self) {
