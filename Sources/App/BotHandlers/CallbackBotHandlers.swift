@@ -3,9 +3,9 @@ import telegram_vapor_bot
 import Vapor
 
 enum CallbackDataEvent: Codable {
-    case my(String, Difficulty)
+    case my(_ songId: String, _ difficulty: Difficulty)
     case recent
-    case img(String, String, Difficulty)
+    case img(_ baseUrl: String, _ songId: String, _ difficulty: Difficulty)
     case b30Url(baseUrl: String, uuid: UUID?)
 
     var text: String {
