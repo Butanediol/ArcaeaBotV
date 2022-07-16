@@ -581,7 +581,7 @@ enum DefaultBotHandlers {
 
             let allHistory = try StoredPlay.query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
-                .sort(\.$createdAt).all().wait()
+                .sort(\.$timePlayed).all().wait()
 
             guard !allHistory.isEmpty else {
                 try update.message?.reply(text: "You have no play record.", bot: bot)
