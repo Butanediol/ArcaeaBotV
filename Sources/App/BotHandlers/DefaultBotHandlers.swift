@@ -554,7 +554,8 @@ enum DefaultBotHandlers {
     }
 
     private static func historyHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-        let handler = TGCommandHandler(commands: ["/recenthistory"]) { update, bot in
+        let handler = TGCommandHandler(commands: ["/recenthistory"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
 
@@ -594,8 +595,6 @@ enum DefaultBotHandlers {
                         .button,
                 ])
             }
-
-            print("\(keyboardButtons)")
 
             try update.message?.reply(
                 text: allHistory.last!.formatted(app: app, userInfo: userInfo).markdownV2Escaped,
