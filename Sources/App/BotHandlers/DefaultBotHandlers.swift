@@ -16,6 +16,7 @@ enum DefaultBotHandlers {
         calHandler(app: app, bot: bot)
         statsHandler(app: app, bot: bot)
         opHandler(app: app, bot: bot)
+        historyHandler(app: app, bot: bot)
     }
 
     private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -548,6 +549,60 @@ enum DefaultBotHandlers {
             } else {
                 try update.message?.reply(text: "This user is now an operator.", bot: bot)
             }
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+
+    private static func historyHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/recenthistory"]) { update, bot in
+            // Ensure valid telegram user
+            guard let telegramUserId = update.message?.from?.id else { return }
+
+            // Ensure bound
+            guard let relationship = try BindingRelationship
+                .query(on: app.db)
+                .filter(\.$telegramUserId, .equal, telegramUserId)
+                .first()
+                .wait()
+            else {
+                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                return
+            }
+
+            guard let userInfo = try StoredUserInfo.query(on: app.db)
+                .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
+                .sort(\.$createdAt, .descending)
+                .first()
+                .wait()
+            else {
+                throw Abort(.internalServerError)
+            }
+
+            let allHistory = try StoredPlay.query(on: app.db)
+                .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
+                .sort(\.$createdAt).all().wait()
+
+            guard !allHistory.isEmpty else {
+                try update.message?.reply(text: "You have no play record.", bot: bot)
+                return
+            }
+
+            var keyboardButtons: [[TGInlineKeyboardButton]] = []
+            if allHistory.count > 1 {
+                keyboardButtons.append([
+                    CallbackDataEvent.prevPlay(uuid: allHistory[allHistory.count - 2].id!)
+                        .button,
+                ])
+            }
+
+            print("\(keyboardButtons)")
+
+            try update.message?.reply(
+                text: allHistory.last!.formatted(app: app, userInfo: userInfo).markdownV2Escaped,
+                bot: bot,
+                parseMode: .markdownV2,
+                replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: keyboardButtons))
+            )
         }
         bot.connection.dispatcher.add(handler)
     }
