@@ -1,4 +1,5 @@
 import Fluent
+import OpenCC
 import Vapor
 
 extension Song {
@@ -10,7 +11,7 @@ extension Song {
     static func search<T: StringProtocol>(_ searchText: T, in app: Application,
                                           options: SongSearchOptions...) throws -> EventLoopFuture<[Song]>
     {
-        let text = "\(searchText)"
+        let text = Application.t2sConverter.convert("\(searchText)")
         let alias: Alias? = options.contains(.includeAliases) ? try Alias.query(on: app.db)
             .filter(\.$alias == text).first().wait() : nil
 
