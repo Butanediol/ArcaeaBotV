@@ -244,6 +244,15 @@
       }
     },
     {
+      "identity" : "swiftyopencc",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ddddxxx/SwiftyOpenCC.git",
+      "state" : {
+        "branch" : "master",
+        "revision" : "1d8105a0f7199c90af722bff62728050c858e777"
+      }
+    },
+    {
       "identity" : "telegram-vapor-bot",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nerzh/telegram-vapor-bot",

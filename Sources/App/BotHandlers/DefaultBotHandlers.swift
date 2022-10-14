@@ -437,10 +437,11 @@ enum DefaultBotHandlers {
             }
 
             // Parse new alias
-            guard let alias = update.message?.parameters.dropFirst().first else {
+            guard var alias = update.message?.parameters.dropFirst().first else {
                 try update.message?.reply(text: "Please specify a new alias.", bot: bot)
                 return
             }
+            alias = Application.t2sConverter.convert(alias)
 
             // Check if song exist
             guard let song = try Song.query(on: app.db).filter(\.$sid == searchText).first().wait() else {
