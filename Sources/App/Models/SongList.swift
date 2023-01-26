@@ -24,7 +24,7 @@ struct SongList: Codable {
         let difficulties: [SongList.Difficulty]
         let worldUnlock, remoteDL: Bool?
         let sourceLocalized: SourceLocalized?
-        let sourceCopyright: SourceCopyright?
+        let sourceCopyright: String?
         let noStream: Bool?
         let jacketLocalized: JacketLocalized?
         let bgDaynight: BgDaynight?
@@ -116,15 +116,6 @@ struct SongList: Codable {
 
     struct JacketLocalized: Codable {
         let ja: Bool
-    }
-
-    enum SourceCopyright: String, Codable {
-        case empty = ""
-        case marvelousIncSupportedByHARDCORETANOC = "©Marvelous Inc. / Supported by HARDCORE TANO*C"
-        case sega = "©SEGA"
-        case taitoCorp19782019 = "© TAITO CORP. 1978, 2019"
-        case taitoCorp19782020 = "© TAITO CORP. 1978, 2020"
-        case taitoCorp19782022 = "© TAITO CORP. 1978, 2022"
     }
 
     // MARK: - SourceLocalized
