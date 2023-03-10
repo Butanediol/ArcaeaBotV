@@ -1,30 +1,30 @@
 import Foundation
-import telegram_vapor_bot
+import TelegramVaporBot
 
 class TGInlineQueryHandler: TGHandlerPrtcl {
-    public var id: Int = 0
+    var id: Int
 
-    public var name: String
+    let callback: TGHandlerCallbackAsync
 
-    let callback: TGHandlerCallback
-
-    public init(
-        name: String = String(describing: TGInlineQueryHandler.self),
-        _ callback: @escaping TGHandlerCallback
+    init(
+        id: Int = 0,
+        _ callback: @escaping TGHandlerCallbackAsync
     ) {
-        self.name = name
+        self.id = id
         self.callback = callback
     }
 
-    func check(update: TGUpdate) -> Bool {
+    func check(update: TelegramVaporBot.TGUpdate) -> Bool {
         return update.inlineQuery != nil
     }
 
-    func handle(update: TGUpdate, bot: TGBotPrtcl) {
+    func handle(update: TelegramVaporBot.TGUpdate, bot: TelegramVaporBot.TGBot) async throws {
         do {
-            try callback(update, bot)
+            try await callback(update, bot)
         } catch {
             TGBot.log.error(error.logMessage)
         }
     }
+
+
 }

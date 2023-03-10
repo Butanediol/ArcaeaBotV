@@ -1,25 +1,25 @@
 import Fluent
-import telegram_vapor_bot
+import TelegramVaporBot
 import Vapor
 
 enum DefaultBotHandlers {
-    static func addhandlers(app: Vapor.Application, bot: TGBotPrtcl) {
-        startHandler(app: app, bot: bot)
-        bindHandler(app: app, bot: bot)
-        unbindHandler(app: app, bot: bot)
-        recentHandler(app: app, bot: bot)
-        myHandler(app: app, bot: bot)
-        best30Handler(app: app, bot: bot)
-        getAliasHandler(app: app, bot: bot)
-        getSongHandler(app: app, bot: bot)
-        addAliasHandler(app: app, bot: bot)
-        calHandler(app: app, bot: bot)
-        statsHandler(app: app, bot: bot)
-        opHandler(app: app, bot: bot)
-        historyHandler(app: app, bot: bot)
+    static func addhandlers(app: Vapor.Application, connection: TGConnectionPrtcl) async {
+        await startHandler(app: app, connection: connection)
+        await bindHandler(app: app, connection: connection)
+        await unbindHandler(app: app, connection: connection)
+        await recentHandler(app: app, connection: connection)
+        await myHandler(app: app, connection: connection)
+        await best30Handler(app: app, connection: connection)
+        await getAliasHandler(app: app, connection: connection)
+        await getSongHandler(app: app, connection: connection)
+        await addAliasHandler(app: app, connection: connection)
+        await calHandler(app: app, connection: connection)
+        await statsHandler(app: app, connection: connection)
+        await opHandler(app: app, connection: connection)
+        await historyHandler(app: app, connection: connection)
     }
 
-    private static func startHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func startHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/start"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
 
@@ -32,16 +32,16 @@ enum DefaultBotHandlers {
                 } else { return nil }
             }
 
-            try update.message?.reply(
+            try await update.message?.reply(
                 text: "Hello telegram user.",
                 bot: bot,
                 replyMarkup: markup
             )
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func bindHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func bindHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/bind"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
 
@@ -49,15 +49,14 @@ enum DefaultBotHandlers {
             guard let telegramUserId = update.message?.from?.id, telegramUserId != 136_817_688 else { return }
 
             // Check if already bound.
-            if let relationship = try BindingRelationship.query(on: app.db)
+            if let relationship = try await BindingRelationship.query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait()
             {
                 // Already bound
-                let userInfo = try StoredUserInfo.query(on: app.db)
-                    .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode).first().wait()
-                try update.message?.reply(
+                let userInfo = try await StoredUserInfo.query(on: app.db)
+                    .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode).first()
+                try await update.message?.reply(
                     text: "You have already bound, \(userInfo?.displayName ?? relationship.arcaeaFriendCode)",
                     bot: bot
                 )
@@ -70,23 +69,22 @@ enum DefaultBotHandlers {
                     .joined(separator: " ") as? ArcaeaFriendCode,
                     arcaeaFriendCode.isValid
                 else {
-                    try update.message?.reply(text: "Invalid arcaea friend code.", bot: bot)
+                    try await update.message?.reply(text: "Invalid arcaea friend code.", bot: bot)
                     return
                 }
 
                 let result = app.arcaeaLimitedAPI.userInfo(friendCode: arcaeaFriendCode)
                 switch result {
                 case let .success(userInfo):
-                    try BindingRelationship(
+                    try await BindingRelationship(
                         telegramUserId: telegramUserId,
                         arcaeaFriendCode: arcaeaFriendCode
                     )
                     .save(on: app.db)
-                    .wait()
-                    try update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
+                    try await update.message?.reply(text: "Hello, \(userInfo.displayName)", bot: bot)
 
                 case let .failure(error):
-                    try update.message?.reply(
+                    try await update.message?.reply(
                         text: "\(error.errorDescription ?? "Error description found.")".markdownV2Escaped,
                         bot: bot,
                         parseMode: .markdownV2
@@ -94,10 +92,10 @@ enum DefaultBotHandlers {
                 }
             }
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func unbindHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func unbindHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/unbind"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
 
@@ -105,35 +103,33 @@ enum DefaultBotHandlers {
             guard let telegramUserId = update.message?.from?.id else { return }
 
             // Check if already bound.
-            if let relationship = try BindingRelationship
+            if let relationship = try await BindingRelationship
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait()
             {
                 // Already bound
-                let userInfo = try StoredUserInfo
+                let userInfo = try await StoredUserInfo
                     .query(on: app.db)
                     .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
                     .sort(\.$createdAt)
                     .first()
-                    .wait()
 
-                try relationship.delete(on: app.db).wait()
-                try update.message?.reply(
+                try await relationship.delete(on: app.db)
+                try await update.message?.reply(
                     text: "Goodbye, \(userInfo?.displayName ?? relationship.arcaeaFriendCode).",
                     bot: bot
                 )
             } else {
                 // Not bound
 
-                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                try await update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
             }
         }
-        bot.connection.dispatcher.add(handler)
+       await connection.dispatcher.add(handler)
     }
 
-    private static func recentHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func recentHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/recent"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
 
@@ -141,20 +137,19 @@ enum DefaultBotHandlers {
             guard let telegramUserId = update.message?.from?.id else { return }
 
             // Ensure bound
-            guard let relationship = try BindingRelationship
+            guard let relationship = try await BindingRelationship
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait()
             else {
-                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                try await update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
                 return
             }
 
             let result = app.arcaeaLimitedAPI.userInfo(friendCode: relationship.arcaeaFriendCode)
             switch result {
             case let .success(userInfo):
-                try update.message?.reply(
+                try await update.message?.reply(
                     text: userInfo.formatted(app: app).markdownV2Escaped,
                     bot: bot,
                     parseMode: .markdownV2,
@@ -168,17 +163,17 @@ enum DefaultBotHandlers {
                 )
 
             case let .failure(error):
-                try update.message?.reply(
+                try await update.message?.reply(
                     text: "\(error.errorDescription ?? "Error description found.")".markdownV2Escaped,
                     bot: bot,
                     parseMode: .markdownV2
                 )
             }
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func myHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func myHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(
             commands: ["/my"],
             options: [.editedUpdates],
@@ -192,36 +187,35 @@ enum DefaultBotHandlers {
             guard let parameters = update.message?.parameters
             else { app.logger.info("parameters error"); return }
             guard let searchText = parameters.first else {
-                try update.message?.reply(text: "Invalid song name.", bot: bot)
+                try await update.message?.reply(text: "Invalid song name.", bot: bot)
                 return
             }
 
             let difficulty: Difficulty = parameters.last?.toDifficulty() ?? .future
 
             // Ensure bound
-            guard let relationship = try BindingRelationship
+            guard let relationship = try await BindingRelationship
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait()
+                
             else {
-                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                try await update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
                 return
             }
 
-            guard let userInfo = try StoredUserInfo
+            guard let userInfo = try await StoredUserInfo
                 .query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
                 .sort(\.$createdAt, .descending)
                 .first()
-                .wait()
             else {
                 throw Abort(.internalServerError)
             }
 
-            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            guard let song = try await Song.search(searchText, in: app, options: .includeAliases).first
             else {
-                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                try await update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
 
@@ -232,7 +226,7 @@ enum DefaultBotHandlers {
             )
             switch result {
             case let .success(play):
-                try update.message?.reply(
+                try await update.message?.reply(
                     text: play.formatted(app: app, userInfo: userInfo).markdownV2Escaped,
                     bot: bot,
                     parseMode: .markdownV2,
@@ -240,17 +234,17 @@ enum DefaultBotHandlers {
                             .my(play.songID, play.difficulty).button]]))
                 )
             case let .failure(error):
-                try update.message?.reply(
+                try await update.message?.reply(
                     text: "\(error.errorDescription ?? "Error description found.")".markdownV2Escaped,
                     bot: bot,
                     parseMode: .markdownV2
                 )
             }
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func best30Handler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func best30Handler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/best30"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
 
@@ -258,30 +252,30 @@ enum DefaultBotHandlers {
             guard let telegramUserId = update.message?.from?.id else { return }
 
             // Ensure bound
-            guard let relationship = try BindingRelationship
+            guard let relationship = try await BindingRelationship
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait()
+                
             else {
-                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                try await update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
                 return
             }
 
             // Get scale factor
             let scale = Int(update.message?.parameters.first ?? .empty)
 
-            let userInfo = try StoredUserInfo.query(on: app.db)
+            let userInfo = try await StoredUserInfo.query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
                 .sort(\.$createdAt, .descending)
                 .first()
-                .wait()
+                
 
             switch app.arcaeaLimitedAPI.bestInfo(friendCode: relationship.arcaeaFriendCode) {
             case let .success((best30, storedBest30)):
-                try update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
+                try await update.message?.reply(text: best30.formatted(app: app, userInfo: userInfo), bot: bot)
 
-                let songs = try Song.query(on: app.db).all().wait()
+                let songs = try await Song.query(on: app.db).all()
                 let image = try app.imageRenderer.render(
                     storedBest30,
                     songs: songs,
@@ -290,7 +284,7 @@ enum DefaultBotHandlers {
 
                 if scale != nil {
                     // Send original photo as document
-                    try bot.sendDocument(params: .init(
+                    try await bot.sendDocument(params: .init(
                         chatId: .chat(update.message?.chat.id ?? .zero),
                         document: .file(.init(
                             filename: "\(userInfo?.displayName ?? "$displayName")_best30_\(Date()).png",
@@ -300,7 +294,7 @@ enum DefaultBotHandlers {
                     ))
                 } else {
                     // Send photo as compressed image
-                    try bot.sendPhoto(params: .init(
+                    try await bot.sendPhoto(params: .init(
                         chatId: .chat(update.message?.chat.id ?? .zero),
                         photo: .file(.init(filename: "best30", data: try image.export())),
                         replyMarkup: app.tgConfig?
@@ -314,16 +308,16 @@ enum DefaultBotHandlers {
                 }
 
             case let .failure(error):
-                try update.message?.reply(
+                try await update.message?.reply(
                     text: "\(error.errorDescription ?? "Error description found.")",
                     bot: bot
                 )
             }
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func getAliasHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func getAliasHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(
             commands: ["/getalias"],
             options: [.editedUpdates],
@@ -332,35 +326,35 @@ enum DefaultBotHandlers {
             guard update.message?.parameters.count ?? .zero > .zero,
                   let searchText = update.message?.parameters.joined(separator: " ")
             else {
-                try update.message?.reply(text: "Please specify a song id.", bot: bot)
+                try await update.message?.reply(text: "Please specify a song id.", bot: bot)
                 return
             }
 
-            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            guard let song = try await Song.search(searchText, in: app, options: .includeAliases).first
             else {
-                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                try await update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
 
             var text = "\(song.nameEn)\n`\(song.sid)`\n---\n"
 
-            text += try Alias.query(on: app.db)
+            text += try await Alias.query(on: app.db)
                 .filter(\.$sid, .equal, song.sid)
                 .all()
-                .wait()
+                
                 .map { $0.alias }
                 .joined(separator: "\n")
 
-            try update.message?.reply(
+            try await update.message?.reply(
                 text: text.markdownV2Escaped,
                 bot: bot,
                 parseMode: .markdownV2
             )
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func getSongHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func getSongHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(
             commands: ["/getsong"],
             options: [.editedUpdates],
@@ -369,13 +363,13 @@ enum DefaultBotHandlers {
             guard update.message?.parameters.count ?? .zero > .zero,
                   let searchText = update.message?.parameters.joined(separator: " ")
             else {
-                try update.message?.reply(text: "Please specify a song id.", bot: bot)
+                try await update.message?.reply(text: "Please specify a song id.", bot: bot)
                 return
             }
 
-            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            guard let song = try await Song.search(searchText, in: app, options: .includeAliases).first
             else {
-                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                try await update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
 
@@ -402,17 +396,17 @@ enum DefaultBotHandlers {
                 } else { return [[]] }
             }()
 
-            try update.message?.reply(
+            try await update.message?.reply(
                 text: "`\(text)`".markdownV2Escaped,
                 bot: bot,
                 parseMode: .markdownV2,
                 replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: buttons))
             )
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func addAliasHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func addAliasHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/addalias"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
 
@@ -420,50 +414,48 @@ enum DefaultBotHandlers {
             guard let telegramUserId = update.message?.from?.id else { return }
 
             // Ensure this user has operator permission
-            guard try BindingRelationship.query(on: app.db)
+            guard try await BindingRelationship.query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
-                .first()
-                .wait()?
-                .isOperator == true || String(telegramUserId) == app.tgConfig?.adminUserId
+                .first()?.isOperator == true || String(telegramUserId) == app.tgConfig?.adminUserId
             else {
-                try update.message?.reply(text: "Sorry, permission denied.", bot: bot)
+                try await update.message?.reply(text: "Sorry, permission denied.", bot: bot)
                 return
             }
 
             // Parse song id
             guard let searchText = update.message?.parameters.first else {
-                try update.message?.reply(text: "Please specify a song id.", bot: bot)
+                try await update.message?.reply(text: "Please specify a song id.", bot: bot)
                 return
             }
 
             // Parse new alias
             guard var alias = update.message?.parameters.dropFirst().first else {
-                try update.message?.reply(text: "Please specify a new alias.", bot: bot)
+                try await update.message?.reply(text: "Please specify a new alias.", bot: bot)
                 return
             }
             alias = Application.t2sConverter.convert(alias)
 
             // Check if song exist
-            guard let song = try Song.query(on: app.db).filter(\.$sid == searchText).first().wait() else {
-                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+            guard let song = try await Song.query(on: app.db).filter(\.$sid == searchText).first() else {
+                try await update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
 
             do {
-                try Alias(sid: song.sid, alias: alias).save(on: app.db).wait()
-                try update.message?.reply(text: "New alias saved.\n\(alias) -> \(song.sid)", bot: bot)
+                try await Alias(sid: song.sid, alias: alias).save(on: app.db)
+                try await update.message?.reply(text: "New alias saved.\n\(alias) -> \(song.sid)", bot: bot)
             } catch {
-                try update.message?.reply(text: "\(error.localizedDescription)", bot: bot)
+                try await update.message?.reply(text: "\(error.localizedDescription)", bot: bot)
             }
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func calHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func calHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/cal"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
             guard let searchText = update.message?.parameters.first else {
-                try update.message?.reply(text: "You have to specify a song id or an alias.", bot: bot)
+                try await update.message?.reply(text: "You have to specify a song id or an alias.", bot: bot)
                 return
             }
 
@@ -473,9 +465,9 @@ enum DefaultBotHandlers {
             let difficulty: Difficulty = update.message?.parameters.dropFirst().first?.toDifficulty() ??
                 update.message?.parameters.dropFirst(2).first?.toDifficulty() ?? .future
 
-            guard let song = try Song.search(searchText, in: app, options: .includeAliases).wait().first
+            guard let song = try await Song.search(searchText, in: app, options: .includeAliases).first
             else {
-                try update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
+                try await update.message?.reply(text: "There are no songs named \(searchText).", bot: bot)
                 return
             }
 
@@ -493,22 +485,22 @@ enum DefaultBotHandlers {
                     "\(levelScore) -> \(song.playPtt(difficulty: difficulty, score: levelScore))"
                 }.joined(separator: "\n")
 
-            try update.message?.reply(text: text, bot: bot)
+            try await update.message?.reply(text: text, bot: bot)
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func statsHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func statsHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/stats"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
             let time24hAgo = Date(timeIntervalSinceNow: -86400).timeIntervalSince1970
-            let best30Count = try StoredBest30.query(on: app.db)
-                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count().wait()
-            let myCount = try StoredPlay.query(on: app.db)
-                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count().wait()
-            let recentCount = try StoredUserInfo.query(on: app.db)
-                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count().wait()
-            try update.message?.reply(text: """
+            let best30Count = try await StoredBest30.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count()
+            let myCount = try await StoredPlay.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count()
+            let recentCount = try await StoredUserInfo.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count()
+            try await update.message?.reply(text: """
                                       \(memoryReport())
 
                                       In the last 24 hours, there are total of
@@ -518,10 +510,10 @@ enum DefaultBotHandlers {
                                       """.markdownV2Escaped,
                                       bot: bot, parseMode: .markdownV2)
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func opHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func opHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/op"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
 
@@ -530,62 +522,62 @@ enum DefaultBotHandlers {
 
             // Only admin can prompt ops
             guard String(telegramUserId) == app.tgConfig?.adminUserId else {
-                try update.message?.reply(text: "Sorry, permission denied.", bot: bot)
+                try await update.message?.reply(text: "Sorry, permission denied.", bot: bot)
                 return
             }
 
             guard let targetUser = update.message?.replyToMessage?.from?.id else { return }
 
-            guard let relationship = try BindingRelationship.query(on: app.db)
-                .filter(\.$telegramUserId, .equal, targetUser).first().wait()
+            guard let relationship = try await BindingRelationship.query(on: app.db)
+                .filter(\.$telegramUserId, .equal, targetUser).first()
             else {
-                try update.message?.reply(text: "User not bound.", bot: bot)
+                try await update.message?.reply(text: "User not bound.", bot: bot)
                 return
             }
 
             relationship.isOperator.toggle()
-            try relationship.save(on: app.db).wait()
+            try await relationship.save(on: app.db)
             if !relationship.isOperator { // Actually, *was* operator
-                try update.message?.reply(text: "This user is not an operator anymore.", bot: bot)
+                try await update.message?.reply(text: "This user is not an operator anymore.", bot: bot)
             } else {
-                try update.message?.reply(text: "This user is now an operator.", bot: bot)
+                try await update.message?.reply(text: "This user is now an operator.", bot: bot)
             }
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
-    private static func historyHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func historyHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCommandHandler(commands: ["/recenthistory"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
             // Ensure valid telegram user
             guard let telegramUserId = update.message?.from?.id else { return }
 
             // Ensure bound
-            guard let relationship = try BindingRelationship
+            guard let relationship = try await BindingRelationship
                 .query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait()
+                
             else {
-                try update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
+                try await update.message?.reply(text: "You have not bound yet, try /bind.", bot: bot)
                 return
             }
 
-            guard let userInfo = try StoredUserInfo.query(on: app.db)
+            guard let userInfo = try await StoredUserInfo.query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
                 .sort(\.$createdAt, .descending)
                 .first()
-                .wait()
+                
             else {
                 throw Abort(.internalServerError)
             }
 
-            let allHistory = try StoredPlay.query(on: app.db)
+            let allHistory = try await StoredPlay.query(on: app.db)
                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
-                .sort(\.$timePlayed, .descending).all().wait()
+                .sort(\.$timePlayed, .descending).all()
 
             guard !allHistory.isEmpty else {
-                try update.message?.reply(text: "You have no play record.", bot: bot)
+                try await update.message?.reply(text: "You have no play record.", bot: bot)
                 return
             }
 
@@ -597,13 +589,13 @@ enum DefaultBotHandlers {
                 ])
             }
 
-            try update.message?.reply(
+            try await update.message?.reply(
                 text: allHistory.last!.formatted(app: app, userInfo: userInfo).markdownV2Escaped,
                 bot: bot,
                 parseMode: .markdownV2,
                 replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: keyboardButtons))
             )
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 }

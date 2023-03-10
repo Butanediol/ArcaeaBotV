@@ -3,7 +3,8 @@ import FluentPostgresDriver
 import Leaf
 import Vapor
 
-import telegram_vapor_bot
+import TelegramVaporBot
+var TGBotConnection: TGConnectionPrtcl!
 
 // configures your application
 public func configure(_ app: Application) throws {
@@ -41,19 +42,18 @@ public func configure(_ app: Application) throws {
 }
 
 private func configureTelegramBot(_ app: Application) throws {
-    TGBot.configure(
-        connection: TGLongPollingConnection(),
-        botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY",
-        vaporClient: app.client
+
+    let bot = TGBot(
+        app: app, 
+        botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
     )
-    app.tgConfig = .init(
-        botUsername: Environment.get("TELEGRAM_BOT_USERNAME"),
-        adminUserId: Environment.get("TELEGRAM_ADMIN_USERID"),
-        webAppBaseUrl: Environment.get("WEB_APP_BASE_URL")
-    )
-    try TGBot.shared.start()
-    TGBot.log.logLevel = app.logger.logLevel
-    DefaultBotHandlers.addhandlers(app: app, bot: TGBot.shared)
-    InlineBotHandlers.addhandlers(app: app, bot: TGBot.shared)
-    CallbackBotHandler.addhandlers(app: app, bot: TGBot.shared)
+
+    TGBotConnection = TGLongPollingConnection(bot: bot)
+
+    Task {
+        await DefaultBotHandlers.addhandlers(app: app, connection: TGBotConnection)
+        await InlineBotHandlers.addhandlers(app: app, connection: TGBotConnection)
+        await CallbackBotHandler.addhandlers(app: app, connection: TGBotConnection)
+        try await TGBotConnection.start()
+    }
 }

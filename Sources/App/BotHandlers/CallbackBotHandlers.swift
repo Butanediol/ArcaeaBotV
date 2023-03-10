@@ -1,5 +1,5 @@
 import Fluent
-import telegram_vapor_bot
+import TelegramVaporBot
 import Vapor
 
 enum CallbackDataEvent: Codable {
@@ -60,11 +60,11 @@ enum CallbackDataEvent: Codable {
 }
 
 enum CallbackBotHandler {
-    static func addhandlers(app: Vapor.Application, bot: TGBotPrtcl) {
-        callbackDispatcher(app: app, bot: bot)
+    static func addhandlers(app: Vapor.Application, connection: TGConnectionPrtcl) async {
+        await callbackDispatcher(app: app, connection: connection)
     }
 
-    private static func callbackDispatcher(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func callbackDispatcher(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGCallbackQueryHandler(pattern: ".*") { update, bot in
             guard let callbackEvent = update.callbackQuery?.data else {
                 app.logger.error("Cannot get callback data.")
@@ -86,52 +86,50 @@ enum CallbackBotHandler {
             case .b30Url:
                 break
             case let .prevPlay(uuid):
-                try playRecordHandler(app: app, bot: bot, update: update, uuid: uuid)
+                try await playRecordHandler(app: app, bot: bot, update: update, uuid: uuid)
             case let .nextPlay(uuid):
-                try playRecordHandler(app: app, bot: bot, update: update, uuid: uuid)
+                try await playRecordHandler(app: app, bot: bot, update: update, uuid: uuid)
             }
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 
     private static func playRecordHandler(
         app: Vapor.Application,
-        bot: TGBotPrtcl,
+        bot: TGBot,
         update: TGUpdate,
         uuid: UUID
-    ) throws {
+    ) async throws {
         guard let callbackQuery = update.callbackQuery else { return }
 
         // Ensure bound
-        guard let relationship = try BindingRelationship
+        guard let relationship = try await BindingRelationship
             .query(on: app.db)
             .filter(\.$telegramUserId, .equal, callbackQuery.from.id)
             .first()
-            .wait()
         else {
-            try bot
+            try await bot
                 .answerCallbackQuery(params: .init(callbackQueryId: callbackQuery.id,
                                                    text: "You have not bound yet, try /bind."))
             return
         }
 
-        guard let userInfo = try StoredUserInfo.query(on: app.db)
+        guard let userInfo = try await StoredUserInfo.query(on: app.db)
             .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
             .first()
-            .wait()
         else {
-            try bot
+            try await bot
                 .answerCallbackQuery(params: .init(callbackQueryId: callbackQuery.id,
                                                    text: "Failed to get user info."))
             return
         }
 
-        let allHistory = try StoredPlay.query(on: app.db)
+        let allHistory = try await StoredPlay.query(on: app.db)
             .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
-            .sort(\.$timePlayed, .descending).all().wait()
+            .sort(\.$timePlayed, .descending).all()
 
         guard let index = allHistory.firstIndex(where: { $0.id == uuid }) else {
-            try bot
+            try await bot
                 .answerCallbackQuery(params: .init(callbackQueryId: callbackQuery.id,
                                                    text: "Failed to get index."))
             return
@@ -143,7 +141,7 @@ enum CallbackBotHandler {
                 .nextPlay(uuid: allHistory[index + 1].id ?? UUID()).button : nil,
         ].compactMap { $0 }]
 
-        try callbackQuery.message?.edit(
+        try await callbackQuery.message?.edit(
             text: allHistory[index].formatted(app: app, userInfo: userInfo).markdownV2Escaped,
             bot: bot,
             parseMode: .markdownV2,

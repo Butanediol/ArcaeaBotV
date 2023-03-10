@@ -1,13 +1,13 @@
 import Fluent
-import telegram_vapor_bot
+import TelegramVaporBot
 import Vapor
 
 enum InlineBotHandlers {
-    static func addhandlers(app: Vapor.Application, bot: TGBotPrtcl) {
-        inlineHandler(app: app, bot: bot)
+    static func addhandlers(app: Vapor.Application, connection: TGConnectionPrtcl) async {
+        await inlineHandler(app: app, connection: connection)
     }
 
-    private static func inlineHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+    private static func inlineHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
         let handler = TGInlineQueryHandler { update, bot in
 
             // This should never happen
@@ -21,10 +21,9 @@ enum InlineBotHandlers {
 
             var results: [TGInlineQueryResult] = []
 
-            if let relationship = try BindingRelationship.query(on: app.db)
+            if let relationship = try await BindingRelationship.query(on: app.db)
                 .filter(\.$telegramUserId, .equal, telegramUserId)
                 .first()
-                .wait()
             {
                 // User bound
                 if inlineQuery.query == "" {
@@ -53,8 +52,7 @@ enum InlineBotHandlers {
                 } else {
                     // Query is not empty -> /my
                     guard let query = queries.first else { return }
-                    if let song = try Song.search(query, in: app, options: .includeAliases, .exactMatch)
-                        .wait().first
+                    if let song = try await Song.search(query, in: app, options: .includeAliases, .exactMatch).first
                     {
                         let difficulty: Difficulty = queries.dropFirst().first?.toDifficulty() ?? .future
 
@@ -66,11 +64,10 @@ enum InlineBotHandlers {
                         switch result {
                         case let .success(play):
 
-                            if let userInfo = try StoredUserInfo.query(on: app.db)
+                            if let userInfo = try await StoredUserInfo.query(on: app.db)
                                 .filter(\.$arcaeaFriendCode, .equal, relationship.arcaeaFriendCode)
                                 .sort(\.$createdAt, .descending)
                                 .first()
-                                .wait()
                             {
                                 results.append(
                                     .article(
@@ -147,8 +144,8 @@ enum InlineBotHandlers {
                 cacheTime: 1
             )
 
-            try bot.answerInlineQuery(params: tgAnswerInlineQueryParams)
+            try await bot.answerInlineQuery(params: tgAnswerInlineQueryParams)
         }
-        bot.connection.dispatcher.add(handler)
+        await connection.dispatcher.add(handler)
     }
 }

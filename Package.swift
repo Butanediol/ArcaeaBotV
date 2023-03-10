@@ -1,10 +1,10 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.7
 import PackageDescription
 
 let package = Package(
     name: "ArcaeaBotV",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v13),
     ],
     dependencies: [
         // 💧 A server-side Swift web framework.
@@ -12,7 +12,7 @@ let package = Package(
         .package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"),
         .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.0.0"),
         .package(url: "https://github.com/vapor/leaf.git", from: "4.0.0"),
-        .package(url: "https://github.com/nerzh/telegram-vapor-bot", from: "1.0.0"),
+        .package(url: "https://github.com/nerzh/telegram-vapor-bot", .upToNextMajor(from: "2.0.0")),
         .package(url: "https://github.com/twostraws/SwiftGD.git", branch: "main"),
         .package(url: "https://github.com/ddddxxx/SwiftyOpenCC.git", branch: "master"),
     ],
@@ -24,7 +24,7 @@ let package = Package(
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
                 .product(name: "Leaf", package: "leaf"),
                 .product(name: "Vapor", package: "vapor"),
-                .product(name: "telegram-vapor-bot", package: "telegram-vapor-bot"),
+                .product(name: "TelegramVaporBot", package: "telegram-vapor-bot"),
                 .product(name: "SwiftGD", package: "SwiftGD"),
                 .product(name: "OpenCC", package: "SwiftyOpenCC"),
             ],

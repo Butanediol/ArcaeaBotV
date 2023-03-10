@@ -1,4 +1,4 @@
-import telegram_vapor_bot
+import TelegramVaporBot
 
 extension TGMessage {
     var parameters: [String] {
