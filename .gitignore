@@ -9,3 +9,4 @@ db.sqlite
 .env
 .vscode
 Public/songs/*
+Package.resolved
