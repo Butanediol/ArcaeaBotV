@@ -4,11 +4,12 @@ import Leaf
 import Vapor
 
 import TelegramVaporBot
-var TGBotConnection: TGConnectionPrtcl!
+var connection: TGConnectionPrtcl!
 
 // configures your application
-public func configure(_ app: Application) throws {
+public func configure(_ app: Application) async throws {
     // uncomment to serve files from /Public folder
+
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
     app.databases.use(.postgres(
@@ -25,6 +26,7 @@ public func configure(_ app: Application) throws {
     )
 
     app.imageRenderer = try .init()
+    try await configureTelegramBot(app)
 
     app.migrations.add(CreateBindingRelationship())
     app.migrations.add(CreateStoredUserInfo())
@@ -35,25 +37,21 @@ public func configure(_ app: Application) throws {
 
     app.views.use(.leaf)
 
-    try configureTelegramBot(app)
-
     // register routes
     try routes(app)
 }
 
-private func configureTelegramBot(_ app: Application) throws {
+private func configureTelegramBot(_ app: Application) async throws {
 
     let bot = TGBot(
         app: app, 
         botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
     )
 
-    TGBotConnection = TGLongPollingConnection(bot: bot)
+    connection = TGLongPollingConnection(bot: bot)
 
-    Task {
-        await DefaultBotHandlers.addhandlers(app: app, connection: TGBotConnection)
-        await InlineBotHandlers.addhandlers(app: app, connection: TGBotConnection)
-        await CallbackBotHandler.addhandlers(app: app, connection: TGBotConnection)
-        try await TGBotConnection.start()
-    }
+    await DefaultBotHandlers.addhandlers(app: app, connection: connection)
+    await InlineBotHandlers.addhandlers(app: app, connection: connection)
+    await CallbackBotHandler.addhandlers(app: app, connection: connection)
+    try await connection.start()
 }
