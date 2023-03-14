@@ -48,6 +48,11 @@ private func configureTelegramBot(_ app: Application) async throws {
         botId: Environment.get("TELEGRAM_BOT_API") ?? "XXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
     )
 
+    app.tgConfig = .init(
+        botUsername: Environment.get("TELEGRAM_BOT_USERNAME"),
+        adminUserId: Environment.get("TELEGRAM_ADMIN_USERID"),
+        webAppBaseUrl: Environment.get("WEB_APP_BASE_URL")
+    )
     connection = TGLongPollingConnection(bot: bot)
 
     await DefaultBotHandlers.addhandlers(app: app, connection: connection)
