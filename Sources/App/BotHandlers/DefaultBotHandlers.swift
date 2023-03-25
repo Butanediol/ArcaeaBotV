@@ -494,19 +494,23 @@ enum DefaultBotHandlers {
         let handler = TGCommandHandler(commands: ["/stats"],
                                        botUsername: app.tgConfig?.botUsername) { update, bot in
             let time24hAgo = Date(timeIntervalSinceNow: -86400).timeIntervalSince1970
-            let best30Count = try await StoredBest30.query(on: app.db)
-                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count()
-            let myCount = try await StoredPlay.query(on: app.db)
-                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count()
-            let recentCount = try await StoredUserInfo.query(on: app.db)
-                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).count()
+            let best30 = try await StoredBest30.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).all()
+            let my = try await StoredPlay.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).all()
+            let recent = try await StoredUserInfo.query(on: app.db)
+                .filter(\.$createdAt.$timestamp, .greaterThanOrEqual, time24hAgo).all()
+            
+            let uniqueUsers = Set(best30.map(\.arcaeaFriendCode) + my.map(\.arcaeaFriendCode) + recent.map(\.arcaeaFriendCode))
+            
             try await update.message?.reply(text: """
                                       \(memoryReport())
 
                                       In the last 24 hours, there are total of
-                                      `\(best30Count) /best30` requests,
-                                      `\(myCount) /my` requests,
-                                      `\(recentCount) /recent` requests.
+                                      `\(best30.count) /best30` requests,
+                                      `\(my.count) /my` requests,
+                                      `\(recent.count) /recent` requests.
+                                      `\(uniqueUsers.count) / 100` unique accounts.
                                       """.markdownV2Escaped,
                                       bot: bot, parseMode: .markdownV2)
         }
