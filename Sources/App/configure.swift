@@ -53,7 +53,16 @@ private func configureTelegramBot(_ app: Application) async throws {
         adminUserId: Environment.get("TELEGRAM_ADMIN_USERID"),
         webAppBaseUrl: Environment.get("WEB_APP_BASE_URL")
     )
-    connection = TGLongPollingConnection(bot: bot)
+    
+    if let webHookURL = Environment.get("TELEGRAM_WEBHOOK_URL"),
+       let path = webHookURL.split(separator: "/").last {
+        connection = TGWebHookConnection(bot: bot, webHookURL: "\(webHookURL)")
+        try app.register(collection: TelegramWebhookController(path: String(path)))
+        app.logger.info("Using webhook: \(webHookURL)")
+    } else {
+        connection = TGLongPollingConnection(bot: bot)
+        app.logger.info("Using long polling")
+    }
 
     await DefaultBotHandlers.addhandlers(app: app, connection: connection)
     await InlineBotHandlers.addhandlers(app: app, connection: connection)
