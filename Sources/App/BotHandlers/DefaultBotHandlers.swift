@@ -619,7 +619,7 @@ enum DefaultBotHandlers {
             
             let userIds = try await BindingRelationship.query(on: app.db).all().map(\.telegramUserId)
             for userId in userIds {
-                try await bot.sendMessage(params: TGSendMessageParams(chatId: .chat(userId), text: broadcastMessage))
+                try? await bot.sendMessage(params: TGSendMessageParams(chatId: .chat(userId), text: broadcastMessage))
             }
         }
         await connection.dispatcher.add(handler)
