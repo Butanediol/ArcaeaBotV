@@ -17,6 +17,7 @@ enum DefaultBotHandlers {
         await statsHandler(app: app, connection: connection)
         await opHandler(app: app, connection: connection)
         await historyHandler(app: app, connection: connection)
+        await broadcastHandler(app: app, connection: connection)
     }
 
     private static func startHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
@@ -599,6 +600,27 @@ enum DefaultBotHandlers {
                 parseMode: .markdownV2,
                 replyMarkup: .inlineKeyboardMarkup(.init(inlineKeyboard: keyboardButtons))
             )
+        }
+        await connection.dispatcher.add(handler)
+    }
+    
+    private static func broadcastHandler(app: Vapor.Application, connection: TGConnectionPrtcl) async {
+        let handler = TGCommandHandler(commands: ["/broadcast"],
+                                       botUsername: app.tgConfig?.botUsername) { update, bot in
+            guard let telegramUserId = update.message?.from?.id,
+                    String(telegramUserId) == app.tgConfig?.adminUserId
+            else { return }
+            
+            guard let message = update.message else {
+                return
+            }
+            
+            let broadcastMessage = message.parameters.joined(separator: " ")
+            
+            let userIds = try await BindingRelationship.query(on: app.db).all().map(\.telegramUserId)
+            for userId in userIds {
+                try await bot.sendMessage(params: TGSendMessageParams(chatId: .chat(userId), text: broadcastMessage))
+            }
         }
         await connection.dispatcher.add(handler)
     }
